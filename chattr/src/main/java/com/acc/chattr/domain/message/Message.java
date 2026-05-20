@@ -3,15 +3,14 @@ package com.acc.chattr.domain.message;
 import com.acc.chattr.domain.common.BaseEntity;
 import com.acc.chattr.domain.user.User;
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,10 +28,10 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message extends BaseEntity {
 
-    @EmbeddedId
-    private MessageId id;
+    @Id
+    @Column(name = "message_id", length = 36, nullable = false)
+    private String id;
 
-    @MapsId("senderId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
@@ -71,7 +70,7 @@ public class Message extends BaseEntity {
             String roomId,
             RoomType roomType
     ) {
-        this.id = new MessageId(messageId, sender.getId());
+        this.id = messageId;
         this.sender = sender;
         this.parentMessageId = parentMessageId;
         this.content = content;
@@ -91,7 +90,7 @@ public class Message extends BaseEntity {
     }
 
     public Message reply(String id, User sender, String content) {
-        return new Message(id, sender, this.id.getMessageId(), content, null, null, this.roomId, this.roomType);
+        return new Message(id, sender, this.id, content, null, null, this.roomId, this.roomType);
     }
 
     public void edit(String content) {

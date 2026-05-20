@@ -37,8 +37,13 @@ public class Dm extends BaseEntity {
         this.userB = userB;
     }
 
-    public static Dm create(String id, User userA, User userB) {
-        return new Dm(id, userA, userB);
+    // user_a_id < user_b_id 순서로 정규화 — (A,B)와 (B,A)가 항상 같은 레코드를 가리킴
+    // DynamoDB에서 (user_a_id, user_b_id) GSI 조회 시 이 순서를 전제로 함
+    public static Dm create(String id, User user1, User user2) {
+        if (user1.getId().compareTo(user2.getId()) <= 0) {
+            return new Dm(id, user1, user2);
+        }
+        return new Dm(id, user2, user1);
     }
 
     public boolean hasParticipant(User user) {
