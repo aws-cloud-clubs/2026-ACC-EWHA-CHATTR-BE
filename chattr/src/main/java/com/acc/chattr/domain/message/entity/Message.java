@@ -1,7 +1,7 @@
-package com.acc.chattr.domain.message;
+package com.acc.chattr.domain.message.entity;
 
 import com.acc.chattr.domain.common.BaseEntity;
-import com.acc.chattr.infrastructure.dynamodb.converter.RoomTypeConverter;
+import com.acc.chattr.domain.message.repository.RoomTypeConverter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

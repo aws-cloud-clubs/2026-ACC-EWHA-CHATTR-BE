@@ -1,7 +1,7 @@
 package com.acc.chattr.security;
 
-import com.acc.chattr.domain.user.User;
-import com.acc.chattr.domain.user.UserRepository;
+import com.acc.chattr.domain.user.entity.User;
+import com.acc.chattr.domain.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

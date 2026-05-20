@@ -1,6 +1,6 @@
-package com.acc.chattr.infrastructure.dynamodb.converter;
+package com.acc.chattr.domain.message.repository;
 
-import com.acc.chattr.domain.message.RoomType;
+import com.acc.chattr.domain.message.entity.RoomType;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;

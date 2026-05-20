@@ -1,7 +1,6 @@
-package com.acc.chattr.infrastructure.dynamodb;
+package com.acc.chattr.domain.user.repository;
 
-import com.acc.chattr.domain.user.User;
-import com.acc.chattr.domain.user.UserRepository;
+import com.acc.chattr.domain.user.entity.User;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;

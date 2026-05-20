@@ -1,12 +1,12 @@
 package com.acc.chattr.config;
 
-import com.acc.chattr.domain.channel.Channel;
-import com.acc.chattr.domain.channel.ChannelMember;
-import com.acc.chattr.domain.dm.Dm;
-import com.acc.chattr.domain.message.Message;
-import com.acc.chattr.domain.user.User;
-import com.acc.chattr.domain.workspace.Workspace;
-import com.acc.chattr.domain.workspace.WorkspaceMember;
+import com.acc.chattr.domain.channel.entity.Channel;
+import com.acc.chattr.domain.channel.entity.ChannelMember;
+import com.acc.chattr.domain.dm.entity.Dm;
+import com.acc.chattr.domain.message.entity.Message;
+import com.acc.chattr.domain.user.entity.User;
+import com.acc.chattr.domain.workspace.entity.Workspace;
+import com.acc.chattr.domain.workspace.entity.WorkspaceMember;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

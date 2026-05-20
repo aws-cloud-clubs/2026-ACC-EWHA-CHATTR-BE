@@ -1,6 +1,6 @@
-package com.acc.chattr.infrastructure.dynamodb.converter;
+package com.acc.chattr.domain.workspace.repository;
 
-import com.acc.chattr.domain.workspace.WorkspaceRole;
+import com.acc.chattr.domain.workspace.entity.WorkspaceRole;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;

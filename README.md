@@ -108,40 +108,63 @@ src/main/java/com/acc/chattr/
 │
 ├── ChattrApplication.java
 │
-├── config/                          # 스프링 설정
-│   ├── DynamoDbConfig.java          # DynamoDB 클라이언트 & 테이블 빈 등록
-│   ├── DynamoDbTableInitializer.java# 로컬 실행 시 테이블 자동 생성
-│   └── SecurityConfig.java          # Cognito JWT 인증 설정
+├── config/                              # 스프링 설정
+│   ├── DynamoDbConfig.java              # DynamoDB 클라이언트 & 테이블 빈 등록
+│   ├── DynamoDbTableInitializer.java    # 로컬 실행 시 테이블 자동 생성
+│   └── SecurityConfig.java             # Cognito JWT 인증 설정
 │
-├── domain/                          # 도메인 모델 (순수 비즈니스 로직)
-│   ├── common/
-│   │   └── BaseEntity.java          # createdAt, deletedAt 공통 필드
-│   ├── user/
-│   │   ├── User.java
-│   │   └── UserRepository.java      # 도메인 레포지토리 인터페이스
-│   ├── workspace/
-│   │   ├── Workspace.java
-│   │   ├── WorkspaceMember.java
-│   │   └── WorkspaceRole.java       # ADMIN | MEMBER
-│   ├── channel/
-│   │   ├── Channel.java
-│   │   └── ChannelMember.java
-│   ├── dm/
-│   │   └── Dm.java
-│   └── message/
-│       ├── Message.java
-│       ├── MessageAttachment.java   # 첨부파일 값 객체
-│       └── RoomType.java            # CHANNEL | DM
+├── security/
+│   └── CognitoUserSyncFilter.java       # JWT 검증 후 첫 로그인 시 유저 자동 생성
 │
-├── infrastructure/                  # 외부 시스템 연동 구현체
-│   └── dynamodb/
-│       ├── UserDynamoRepository.java# UserRepository DynamoDB 구현체
-│       └── converter/               # DynamoDB ↔ Java enum 변환
-│           ├── WorkspaceRoleConverter.java
-│           └── RoomTypeConverter.java
+├── common/                              # 공통 인프라
+│   ├── code/
+│   │   ├── Code.java                    # 에러코드 인터페이스
+│   │   ├── BusinessErrorCode.java       # 도메인 에러코드 (USER_NOT_FOUND 등)
+│   │   └── GeneralErrorCode.java        # HTTP/공통 에러코드
+│   ├── exception/
+│   │   ├── BusinessException.java       # 도메인 예외
+│   │   ├── GeneralException.java        # 공통 예외
+│   │   └── GlobalExceptionHandler.java  # @RestControllerAdvice
+│   └── response/
+│       └── ApiResponse.java             # 공통 응답 wrapper ApiResponse<T>
 │
-└── security/
-    └── CognitoUserSyncFilter.java   # JWT 검증 후 첫 로그인 시 유저 자동 생성
+└── domain/
+    ├── common/
+    │   └── BaseEntity.java              # createdAt, deletedAt 공통 필드
+    ├── health/                          # 헬스체크
+    │   ├── controller/
+    │   │   └── HealthController.java    # GET /health
+    │   └── dto/
+    │       └── HealthResponse.java
+    ├── user/
+    │   ├── entity/
+    │   │   └── User.java
+    │   └── repository/
+    │       ├── UserRepository.java      # 도메인 레포지토리 인터페이스
+    │       └── UserDynamoRepository.java
+    ├── workspace/
+    │   ├── entity/
+    │   │   ├── Workspace.java
+    │   │   ├── WorkspaceMember.java
+    │   │   └── WorkspaceRole.java       # ADMIN | MEMBER
+    │   └── repository/
+    │       └── WorkspaceRoleConverter.java
+    ├── channel/
+    │   ├── entity/
+    │   │   ├── Channel.java
+    │   │   └── ChannelMember.java
+    │   └── repository/
+    ├── dm/
+    │   ├── entity/
+    │   │   └── Dm.java
+    │   └── repository/
+    └── message/
+        ├── entity/
+        │   ├── Message.java
+        │   ├── MessageAttachment.java   # 첨부파일 값 객체
+        │   └── RoomType.java            # CHANNEL | DM
+        └── repository/
+            └── RoomTypeConverter.java
 ```
 
 ---

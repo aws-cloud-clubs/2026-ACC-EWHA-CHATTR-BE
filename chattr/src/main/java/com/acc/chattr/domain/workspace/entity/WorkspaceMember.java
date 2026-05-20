@@ -1,7 +1,7 @@
-package com.acc.chattr.domain.workspace;
+package com.acc.chattr.domain.workspace.entity;
 
 import com.acc.chattr.domain.common.BaseEntity;
-import com.acc.chattr.infrastructure.dynamodb.converter.WorkspaceRoleConverter;
+import com.acc.chattr.domain.workspace.repository.WorkspaceRoleConverter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

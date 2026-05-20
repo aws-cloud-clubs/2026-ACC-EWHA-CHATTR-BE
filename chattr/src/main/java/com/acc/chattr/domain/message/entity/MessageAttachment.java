@@ -1,4 +1,4 @@
-package com.acc.chattr.domain.message;
+package com.acc.chattr.domain.message.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

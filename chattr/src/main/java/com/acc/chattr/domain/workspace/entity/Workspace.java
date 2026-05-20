@@ -1,4 +1,4 @@
-package com.acc.chattr.domain.workspace;
+package com.acc.chattr.domain.workspace.entity;
 
 import com.acc.chattr.domain.common.BaseEntity;
 import lombok.AccessLevel;

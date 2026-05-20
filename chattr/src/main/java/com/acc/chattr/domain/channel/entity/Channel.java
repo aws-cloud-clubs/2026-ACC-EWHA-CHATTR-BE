@@ -1,4 +1,4 @@
-package com.acc.chattr.domain.channel;
+package com.acc.chattr.domain.channel.entity;
 
 import com.acc.chattr.domain.common.BaseEntity;
 import lombok.AccessLevel;
