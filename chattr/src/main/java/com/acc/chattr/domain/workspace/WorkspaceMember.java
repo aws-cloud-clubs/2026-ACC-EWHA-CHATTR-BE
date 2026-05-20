@@ -1,55 +1,61 @@
 package com.acc.chattr.domain.workspace;
 
-import com.acc.chattr.domain.user.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
+import com.acc.chattr.domain.common.BaseEntity;
+import com.acc.chattr.infrastructure.dynamodb.converter.WorkspaceRoleConverter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
+@DynamoDbBean
 @Getter
-@Entity
-@Table(name = "workspace_member")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WorkspaceMember {
+@Setter
+@NoArgsConstructor
+public class WorkspaceMember extends BaseEntity {
 
-    @EmbeddedId
-    private WorkspaceMemberId id;
+    @Getter(AccessLevel.NONE)
+    private String workspaceId;
 
-    @MapsId("workspaceId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "workspace_id", nullable = false)
-    private Workspace workspace;
+    @Getter(AccessLevel.NONE)
+    private String userId;
 
-    @MapsId("userId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", length = 10, nullable = false)
+    @Getter(AccessLevel.NONE)
     private WorkspaceRole role;
 
-    @Column(name = "field", length = 255)
     private String field;
 
-    private WorkspaceMember(Workspace workspace, User user, WorkspaceRole role) {
-        this.id = new WorkspaceMemberId(workspace.getId(), user.getId());
-        this.workspace = workspace;
-        this.user = user;
+    private WorkspaceMember(String workspaceId, String userId, WorkspaceRole role) {
+        this.workspaceId = workspaceId;
+        this.userId = userId;
         this.role = role;
+        initCreatedAt();
     }
 
-    public static WorkspaceMember create(Workspace workspace, User user, WorkspaceRole role) {
-        return new WorkspaceMember(workspace, user, role);
+    @DynamoDbPartitionKey
+    @DynamoDbSecondarySortKey(indexNames = {"user-workspaces-index"})
+    public String getWorkspaceId() {
+        return workspaceId;
+    }
+
+    @DynamoDbSortKey
+    @DynamoDbSecondaryPartitionKey(indexNames = {"user-workspaces-index"})
+    public String getUserId() {
+        return userId;
+    }
+
+    @DynamoDbConvertedBy(WorkspaceRoleConverter.class)
+    public WorkspaceRole getRole() {
+        return role;
+    }
+
+    public static WorkspaceMember create(String workspaceId, String userId, WorkspaceRole role) {
+        return new WorkspaceMember(workspaceId, userId, role);
     }
 
     public void changeRole(WorkspaceRole role) {

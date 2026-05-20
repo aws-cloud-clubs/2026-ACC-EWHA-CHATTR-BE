@@ -1,34 +1,28 @@
 package com.acc.chattr.domain.user;
 
 import com.acc.chattr.domain.common.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
+@DynamoDbBean
 @Getter
-@Entity
-@Table(name = "user")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 public class User extends BaseEntity {
 
-    @Id
-    @Column(name = "user_id", length = 36, nullable = false)
+    @Getter(AccessLevel.NONE)
     private String id;
 
-    @Column(name = "email", length = 255, nullable = false, unique = true)
-    private String email;
-
-    @Column(name = "nickname", length = 20, nullable = false)
-    private String nickname;
-
-    @Column(name = "cognito_sub", length = 255, nullable = false, unique = true)
+    @Getter(AccessLevel.NONE)
     private String cognitoSub;
 
-    @Column(name = "is_online", nullable = false)
+    private String email;
+    private String nickname;
     private boolean online;
 
     private User(String id, String email, String nickname, String cognitoSub) {
@@ -37,6 +31,17 @@ public class User extends BaseEntity {
         this.nickname = nickname;
         this.cognitoSub = cognitoSub;
         this.online = false;
+        initCreatedAt();
+    }
+
+    @DynamoDbPartitionKey
+    public String getId() {
+        return id;
+    }
+
+    @DynamoDbSecondaryPartitionKey(indexNames = {"cognito-sub-index"})
+    public String getCognitoSub() {
+        return cognitoSub;
     }
 
     public static User create(String id, String email, String nickname, String cognitoSub) {

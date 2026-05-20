@@ -1,25 +1,22 @@
 package com.acc.chattr.domain.common;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
-@MappedSuperclass
+@Setter
 public abstract class BaseEntity {
+    private Instant createdAt;
+    private Instant deletedAt;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    public void initCreatedAt() {
+        this.createdAt = Instant.now();
+    }
 
     public void delete() {
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = Instant.now();
     }
 
     public boolean isDeleted() {

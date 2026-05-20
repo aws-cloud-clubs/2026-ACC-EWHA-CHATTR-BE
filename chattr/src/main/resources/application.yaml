@@ -1,3 +1,16 @@
 spring:
   application:
     name: chattr
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}/.well-known/jwks.json
+          issuer-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}
+
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  cognito:
+    user-pool-id: ${COGNITO_USER_POOL_ID}
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT:}

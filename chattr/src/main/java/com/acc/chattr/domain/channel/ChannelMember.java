@@ -1,43 +1,47 @@
 package com.acc.chattr.domain.channel;
 
-import com.acc.chattr.domain.user.User;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.Table;
+import com.acc.chattr.domain.common.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
+@DynamoDbBean
 @Getter
-@Entity
-@Table(name = "channel_member")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ChannelMember {
+@Setter
+@NoArgsConstructor
+public class ChannelMember extends BaseEntity {
 
-    @EmbeddedId
-    private ChannelMemberId id;
+    @Getter(AccessLevel.NONE)
+    private String channelId;
 
-    @MapsId("channelId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "channel_id", nullable = false)
-    private Channel channel;
+    @Getter(AccessLevel.NONE)
+    private String userId;
 
-    @MapsId("userId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    private ChannelMember(Channel channel, User user) {
-        this.id = new ChannelMemberId(channel.getId(), user.getId());
-        this.channel = channel;
-        this.user = user;
+    private ChannelMember(String channelId, String userId) {
+        this.channelId = channelId;
+        this.userId = userId;
+        initCreatedAt();
     }
 
-    public static ChannelMember create(Channel channel, User user) {
-        return new ChannelMember(channel, user);
+    @DynamoDbPartitionKey
+    @DynamoDbSecondarySortKey(indexNames = {"user-channels-index"})
+    public String getChannelId() {
+        return channelId;
+    }
+
+    @DynamoDbSortKey
+    @DynamoDbSecondaryPartitionKey(indexNames = {"user-channels-index"})
+    public String getUserId() {
+        return userId;
+    }
+
+    public static ChannelMember create(String channelId, String userId) {
+        return new ChannelMember(channelId, userId);
     }
 }
