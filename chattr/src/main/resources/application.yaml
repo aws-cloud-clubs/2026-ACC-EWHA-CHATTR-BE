@@ -14,3 +14,14 @@ aws:
     user-pool-id: ${COGNITO_USER_POOL_ID}
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:}
+
+chattr:
+  dynamodb:
+    table:
+      user: ${TABLE_USER:chattr-dev-user}
+      workspace: ${TABLE_WORKSPACE:chattr-dev-workspace}
+      workspace-member: ${TABLE_WORKSPACE_MEMBER:chattr-dev-workspace-member}
+      channel: ${TABLE_CHANNEL:chattr-dev-channel}
+      channel-member: ${TABLE_CHANNEL_MEMBER:chattr-dev-channel-member}
+      dm: ${TABLE_DM:chattr-dev-dm}
+      message: ${TABLE_MESSAGE:chattr-dev-message}
