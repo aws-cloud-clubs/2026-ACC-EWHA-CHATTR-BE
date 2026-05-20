@@ -7,22 +7,22 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class ApiResponse<T> {
+public class Response<T> {
 
     private final boolean success;
     private final int statusCode;
     private final String message;
     private final T data;
 
-    public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(true, 200, "OK", data);
+    public static <T> Response<T> ok(T data) {
+        return new Response<>(true, 200, "OK", data);
     }
 
-    public static ApiResponse<Void> ok() {
-        return new ApiResponse<>(true, 200, "OK", null);
+    public static Response<Void> ok() {
+        return new Response<>(true, 200, "OK", null);
     }
 
-    public static ApiResponse<Void> fail(Code code) {
-        return new ApiResponse<>(false, code.getStatusCode(), code.getMessage(), null);
+    public static Response<Void> fail(Code code) {
+        return new Response<>(false, code.getStatusCode(), code.getMessage(), null);
     }
 }

@@ -128,7 +128,7 @@ src/main/java/com/acc/chattr/
 │   │   ├── GeneralException.java
 │   │   └── GlobalExceptionHandler.java  # @RestControllerAdvice
 │   └── response/
-│       └── ApiResponse.java             # 공통 응답 래퍼
+│       └── Response.java             # 공통 응답 래퍼
 │
 └── domain/                              # 도메인별 패키지 (기능 단위)
     ├── common/
@@ -194,7 +194,7 @@ src/main/java/com/acc/chattr/
 
 ## 공통 응답 구조
 
-모든 API는 `ApiResponse<T>`로 감싸서 반환합니다.
+모든 API는 `Response<T>`로 감싸서 반환합니다.
 
 ```json
 {
@@ -209,10 +209,10 @@ src/main/java/com/acc/chattr/
 
 ```java
 // 데이터 있는 성공 응답
-return ResponseEntity.ok(ApiResponse.ok(data));
+return ResponseEntity.ok(Response.ok(data));
 
 // 데이터 없는 성공 응답 (생성/삭제 등)
-return ResponseEntity.ok(ApiResponse.ok());
+return ResponseEntity.ok(Response.ok());
 
 // 실패 응답 — GlobalExceptionHandler가 자동 처리
 throw new BusinessException(BusinessErrorCode.CHANNEL_NOT_FOUND);
