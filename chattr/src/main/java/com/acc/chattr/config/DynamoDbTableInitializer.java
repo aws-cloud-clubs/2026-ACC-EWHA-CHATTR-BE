@@ -17,8 +17,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.model.CreateTableEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.EnhancedGlobalSecondaryIndex;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
@@ -52,7 +52,7 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
 
         createTable(workspaceTable,
             CreateTableEnhancedRequest.builder()
-                .billingMode(BillingMode.PAY_PER_REQUEST).build());
+                .provisionedThroughput(defaultThroughput()).build());
 
         createTable(workspaceMemberTable,
             requestWithGsi("user-workspaces-index"));
@@ -102,8 +102,16 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
             .globalSecondaryIndices(EnhancedGlobalSecondaryIndex.builder()
                 .indexName(indexName)
                 .projection(p -> p.projectionType(ProjectionType.ALL))
+                .provisionedThroughput(defaultThroughput())
                 .build())
-            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .provisionedThroughput(defaultThroughput())
+            .build();
+    }
+
+    private ProvisionedThroughput defaultThroughput() {
+        return ProvisionedThroughput.builder()
+            .readCapacityUnits(1L)
+            .writeCapacityUnits(1L)
             .build();
     }
 }

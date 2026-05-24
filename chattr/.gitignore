@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+.csv
+
+### macOS ###
+.DS_Store
