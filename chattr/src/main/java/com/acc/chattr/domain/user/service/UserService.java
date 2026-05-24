@@ -6,19 +6,23 @@ import com.acc.chattr.domain.user.dto.UserResponse;
 import com.acc.chattr.domain.user.entity.User;
 import com.acc.chattr.domain.user.repository.UserRepository;
 import com.acc.chattr.domain.workspace.repository.WorkspaceMemberRepository;
+import com.acc.chattr.domain.workspace.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMemberRepository workspaceMemberRepository;
 
-    public UserService(UserRepository userRepository, WorkspaceMemberRepository workspaceMemberRepository) {
+    public UserService(UserRepository userRepository,
+                       WorkspaceRepository workspaceRepository,
+                       WorkspaceMemberRepository workspaceMemberRepository) {
         this.userRepository = userRepository;
+        this.workspaceRepository = workspaceRepository;
         this.workspaceMemberRepository = workspaceMemberRepository;
     }
 
@@ -47,9 +51,12 @@ public class UserService {
     }
 
     public List<UserResponse> getWorkspaceUsers(String workspaceId, String query) {
-        return workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
-            .map(m -> userRepository.findById(m.getUserId()).orElse(null))
-            .filter(Objects::nonNull)
+        workspaceRepository.findById(workspaceId)
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_NOT_FOUND));
+        List<String> userIds = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
+            .map(m -> m.getUserId())
+            .toList();
+        return userRepository.findAllByIds(userIds).stream()
             .filter(u -> query == null || query.isBlank()
                 || u.getEmail().contains(query)
                 || u.getNickname().contains(query))

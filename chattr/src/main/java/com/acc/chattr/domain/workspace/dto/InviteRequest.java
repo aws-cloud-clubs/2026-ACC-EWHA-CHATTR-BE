@@ -1,3 +1,7 @@
 package com.acc.chattr.domain.workspace.dto;
 
-public record InviteRequest(String userId) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record InviteRequest(
+    @NotBlank String userId
+) {}

@@ -11,6 +11,7 @@ import com.acc.chattr.domain.channel.dto.ChannelCreateRequest;
 import com.acc.chattr.domain.channel.dto.ChannelResponse;
 import com.acc.chattr.domain.channel.service.ChannelService;
 import com.acc.chattr.domain.workspace.service.WorkspaceService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,7 +42,7 @@ public class WorkspaceController {
     @PostMapping
     public ResponseEntity<Response<WorkspaceResponse>> create(
         @AuthenticationPrincipal Jwt jwt,
-        @RequestBody WorkspaceCreateRequest request
+        @RequestBody @Valid WorkspaceCreateRequest request
     ) {
         WorkspaceResponse response = workspaceService.create(jwt.getSubject(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(Response.ok(response));
@@ -66,7 +67,7 @@ public class WorkspaceController {
     public ResponseEntity<Response<WorkspaceResponse>> update(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String workspaceId,
-        @RequestBody WorkspaceUpdateRequest request
+        @RequestBody @Valid WorkspaceUpdateRequest request
     ) {
         return ResponseEntity.ok(Response.ok(workspaceService.update(jwt.getSubject(), workspaceId, request)));
     }
@@ -82,16 +83,17 @@ public class WorkspaceController {
 
     @GetMapping("/{workspaceId}/members")
     public ResponseEntity<Response<List<WorkspaceMemberResponse>>> getMembers(
+        @AuthenticationPrincipal Jwt jwt,
         @PathVariable String workspaceId
     ) {
-        return ResponseEntity.ok(Response.ok(workspaceService.getMembers(workspaceId)));
+        return ResponseEntity.ok(Response.ok(workspaceService.getMembers(jwt.getSubject(), workspaceId)));
     }
 
     @PostMapping("/{workspaceId}/invitations")
     public ResponseEntity<Response<Void>> invite(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String workspaceId,
-        @RequestBody InviteRequest request
+        @RequestBody @Valid InviteRequest request
     ) {
         workspaceService.invite(jwt.getSubject(), workspaceId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(Response.ok());
@@ -110,7 +112,7 @@ public class WorkspaceController {
     public ResponseEntity<Response<ChannelResponse>> createChannel(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String workspaceId,
-        @RequestBody ChannelCreateRequest request
+        @RequestBody @Valid ChannelCreateRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(Response.ok(channelService.create(jwt.getSubject(), workspaceId, request)));
@@ -120,7 +122,7 @@ public class WorkspaceController {
     public ResponseEntity<Response<Void>> changeRole(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String workspaceId,
-        @RequestBody ChangeRoleRequest request
+        @RequestBody @Valid ChangeRoleRequest request
     ) {
         workspaceService.changeRole(jwt.getSubject(), workspaceId, request);
         return ResponseEntity.ok(Response.ok());

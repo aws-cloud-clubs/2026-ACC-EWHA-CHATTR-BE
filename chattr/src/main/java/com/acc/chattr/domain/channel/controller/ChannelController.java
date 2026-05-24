@@ -6,6 +6,7 @@ import com.acc.chattr.domain.channel.dto.ChannelMemberResponse;
 import com.acc.chattr.domain.channel.dto.ChannelResponse;
 import com.acc.chattr.domain.channel.dto.ChannelUpdateRequest;
 import com.acc.chattr.domain.channel.service.ChannelService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -52,7 +53,7 @@ public class ChannelController {
     public ResponseEntity<Response<ChannelResponse>> update(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String channelId,
-        @RequestBody ChannelUpdateRequest request
+        @RequestBody @Valid ChannelUpdateRequest request
     ) {
         return ResponseEntity.ok(Response.ok(channelService.update(jwt.getSubject(), channelId, request)));
     }
@@ -78,7 +79,7 @@ public class ChannelController {
     public ResponseEntity<Response<Void>> addMember(
         @AuthenticationPrincipal Jwt jwt,
         @PathVariable String channelId,
-        @RequestBody AddMemberRequest request
+        @RequestBody @Valid AddMemberRequest request
     ) {
         channelService.addMember(jwt.getSubject(), channelId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(Response.ok());

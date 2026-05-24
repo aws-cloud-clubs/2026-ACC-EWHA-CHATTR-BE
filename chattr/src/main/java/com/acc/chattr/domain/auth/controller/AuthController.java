@@ -4,6 +4,7 @@ import com.acc.chattr.common.response.Response;
 import com.acc.chattr.domain.auth.dto.DeviceResponse;
 import com.acc.chattr.domain.auth.dto.RegisterDeviceRequest;
 import com.acc.chattr.domain.auth.service.DeviceService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,7 +30,7 @@ public class AuthController {
     @PostMapping("/device/register")
     public ResponseEntity<Response<DeviceResponse>> registerDevice(
         @AuthenticationPrincipal Jwt jwt,
-        @RequestBody RegisterDeviceRequest request
+        @RequestBody @Valid RegisterDeviceRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(Response.ok(deviceService.register(jwt.getSubject(), request)));

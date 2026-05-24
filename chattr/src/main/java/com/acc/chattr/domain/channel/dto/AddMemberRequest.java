@@ -1,3 +1,7 @@
 package com.acc.chattr.domain.channel.dto;
 
-public record AddMemberRequest(String userId) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record AddMemberRequest(
+    @NotBlank String userId
+) {}

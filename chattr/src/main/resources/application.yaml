@@ -17,6 +17,7 @@ aws:
   s3:
     bucket: ${S3_BUCKET:chattr-dev-files}
     presign-expiry-minutes: ${S3_PRESIGN_EXPIRY_MINUTES:10}
+    endpoint: ${S3_ENDPOINT:}
 
 chattr:
   dynamodb:

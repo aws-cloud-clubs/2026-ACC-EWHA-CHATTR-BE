@@ -1,3 +1,9 @@
 package com.acc.chattr.domain.channel.dto;
 
-public record ChannelUpdateRequest(String name, String description, String topic) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record ChannelUpdateRequest(
+    @NotBlank String name,
+    String description,
+    String topic
+) {}

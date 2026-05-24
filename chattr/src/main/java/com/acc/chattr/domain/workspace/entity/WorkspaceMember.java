@@ -28,12 +28,13 @@ public class WorkspaceMember extends BaseEntity {
     @Getter(AccessLevel.NONE)
     private WorkspaceRole role;
 
-    private String field;
+    private boolean pending;
 
     private WorkspaceMember(String workspaceId, String userId, WorkspaceRole role) {
         this.workspaceId = workspaceId;
         this.userId = userId;
         this.role = role;
+        this.pending = false;
         initCreatedAt();
     }
 
@@ -56,6 +57,16 @@ public class WorkspaceMember extends BaseEntity {
 
     public static WorkspaceMember create(String workspaceId, String userId, WorkspaceRole role) {
         return new WorkspaceMember(workspaceId, userId, role);
+    }
+
+    public static WorkspaceMember createPending(String workspaceId, String userId, WorkspaceRole role) {
+        WorkspaceMember member = new WorkspaceMember(workspaceId, userId, role);
+        member.pending = true;
+        return member;
+    }
+
+    public void activate() {
+        this.pending = false;
     }
 
     public void changeRole(WorkspaceRole role) {

@@ -42,7 +42,7 @@ public class WorkspaceMemberDynamoRepository implements WorkspaceMemberRepositor
         return table.query(QueryConditional.keyEqualTo(Key.builder().partitionValue(workspaceId).build()))
             .stream()
             .flatMap(page -> page.items().stream())
-            .filter(m -> !m.isDeleted())
+            .filter(m -> !m.isDeleted() && !m.isPending())
             .toList();
     }
 
@@ -52,7 +52,7 @@ public class WorkspaceMemberDynamoRepository implements WorkspaceMemberRepositor
             .query(QueryConditional.keyEqualTo(Key.builder().partitionValue(userId).build()))
             .spliterator(), false)
             .flatMap(page -> page.items().stream())
-            .filter(m -> !m.isDeleted())
+            .filter(m -> !m.isDeleted() && !m.isPending())
             .toList();
     }
 }

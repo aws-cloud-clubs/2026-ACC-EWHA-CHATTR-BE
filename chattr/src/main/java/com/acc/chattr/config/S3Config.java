@@ -17,7 +17,7 @@ public class S3Config {
     @Value("${aws.region}")
     private String region;
 
-    @Value("${aws.dynamodb.endpoint:}")
+    @Value("${aws.s3.endpoint:}")
     private String localEndpoint;
 
     @Bean

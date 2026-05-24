@@ -18,8 +18,10 @@ import com.acc.chattr.domain.workspace.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkspaceService {
@@ -46,10 +48,16 @@ public class WorkspaceService {
 
     public List<WorkspaceResponse> getMyWorkspaces(String cognitoSub) {
         User user = getUser(cognitoSub);
-        return workspaceMemberRepository.findByUserId(user.getId()).stream()
-            .map(m -> workspaceRepository.findById(m.getWorkspaceId())
-                .map(w -> WorkspaceResponse.from(w, m.getRole()))
-                .orElse(null))
+        List<WorkspaceMember> memberships = workspaceMemberRepository.findByUserId(user.getId());
+        List<String> workspaceIds = memberships.stream().map(WorkspaceMember::getWorkspaceId).toList();
+        Map<String, Workspace> workspaceMap = workspaceRepository.findAllByIds(workspaceIds).stream()
+            .collect(Collectors.toMap(Workspace::getId, w -> w));
+        return memberships.stream()
+            .map(m -> {
+                Workspace w = workspaceMap.get(m.getWorkspaceId());
+                if (w == null) return null;
+                return WorkspaceResponse.from(w, m.getRole());
+            })
             .filter(Objects::nonNull)
             .toList();
     }
@@ -80,12 +88,20 @@ public class WorkspaceService {
         workspaceRepository.save(workspace);
     }
 
-    public List<WorkspaceMemberResponse> getMembers(String workspaceId) {
+    public List<WorkspaceMemberResponse> getMembers(String cognitoSub, String workspaceId) {
+        User user = getUser(cognitoSub);
         getWorkspaceOrThrow(workspaceId);
-        return workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
-            .map(m -> userRepository.findById(m.getUserId())
-                .map(u -> WorkspaceMemberResponse.from(m, u))
-                .orElse(null))
+        getMemberOrThrow(workspaceId, user.getId());
+        List<WorkspaceMember> members = workspaceMemberRepository.findByWorkspaceId(workspaceId);
+        List<String> userIds = members.stream().map(WorkspaceMember::getUserId).toList();
+        Map<String, User> userMap = userRepository.findAllByIds(userIds).stream()
+            .collect(Collectors.toMap(User::getId, u -> u));
+        return members.stream()
+            .map(m -> {
+                User u = userMap.get(m.getUserId());
+                if (u == null) return null;
+                return WorkspaceMemberResponse.from(m, u);
+            })
             .filter(Objects::nonNull)
             .toList();
     }
@@ -103,16 +119,22 @@ public class WorkspaceService {
             throw new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS);
         }
 
-        workspaceMemberRepository.save(WorkspaceMember.create(workspaceId, request.userId(), WorkspaceRole.MEMBER));
+        workspaceMemberRepository.save(
+            WorkspaceMember.createPending(workspaceId, request.userId(), WorkspaceRole.MEMBER));
     }
 
     public void acceptInvitation(String cognitoSub, String workspaceId) {
         User user = getUser(cognitoSub);
         getWorkspaceOrThrow(workspaceId);
-        if (workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, user.getId()).isPresent()) {
+        WorkspaceMember member = workspaceMemberRepository
+            .findByWorkspaceIdAndUserId(workspaceId, user.getId())
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_INVITATION_NOT_FOUND));
+
+        if (!member.isPending()) {
             throw new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS);
         }
-        workspaceMemberRepository.save(WorkspaceMember.create(workspaceId, user.getId(), WorkspaceRole.MEMBER));
+        member.activate();
+        workspaceMemberRepository.save(member);
     }
 
     public void changeRole(String cognitoSub, String workspaceId, ChangeRoleRequest request) {
@@ -122,6 +144,14 @@ public class WorkspaceService {
         requireAdmin(currentMember);
 
         WorkspaceMember targetMember = getMemberOrThrow(workspaceId, request.userId());
+        if (request.role() != WorkspaceRole.ADMIN && targetMember.isAdmin()) {
+            long adminCount = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
+                .filter(WorkspaceMember::isAdmin)
+                .count();
+            if (adminCount <= 1) {
+                throw new BusinessException(BusinessErrorCode.LAST_WORKSPACE_ADMIN);
+            }
+        }
         targetMember.changeRole(request.role());
         workspaceMemberRepository.save(targetMember);
     }
@@ -137,8 +167,12 @@ public class WorkspaceService {
     }
 
     private WorkspaceMember getMemberOrThrow(String workspaceId, String userId) {
-        return workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, userId)
+        WorkspaceMember member = workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, userId)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        if (member.isPending()) {
+            throw new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
+        }
+        return member;
     }
 
     private void requireAdmin(WorkspaceMember member) {

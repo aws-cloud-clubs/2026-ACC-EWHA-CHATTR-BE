@@ -1,3 +1,9 @@
 package com.acc.chattr.domain.auth.dto;
 
-public record RegisterDeviceRequest(String deviceId, String deviceName, String platform) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record RegisterDeviceRequest(
+    @NotBlank String deviceId,
+    @NotBlank String deviceName,
+    @NotBlank String platform
+) {}

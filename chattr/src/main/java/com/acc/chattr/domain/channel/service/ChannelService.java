@@ -19,8 +19,10 @@ import com.acc.chattr.domain.workspace.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ChannelService {
@@ -81,9 +83,10 @@ public class ChannelService {
     public ChannelResponse update(String cognitoSub, String channelId, ChannelUpdateRequest request) {
         User user = getUser(cognitoSub);
         Channel channel = getChannelOrThrow(channelId);
-        requireChannelManager(channel, workspaceMemberRepository.findByWorkspaceIdAndUserId(
-            channel.getWorkspaceId(), user.getId())
-            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND)));
+        WorkspaceMember member = workspaceMemberRepository
+            .findByWorkspaceIdAndUserId(channel.getWorkspaceId(), user.getId())
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        requireChannelManager(channel, member);
 
         channel.updateInfo(request.name(), request.description(), request.topic());
         channelRepository.save(channel);
@@ -93,9 +96,10 @@ public class ChannelService {
     public void delete(String cognitoSub, String channelId) {
         User user = getUser(cognitoSub);
         Channel channel = getChannelOrThrow(channelId);
-        requireChannelManager(channel, workspaceMemberRepository.findByWorkspaceIdAndUserId(
-            channel.getWorkspaceId(), user.getId())
-            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND)));
+        WorkspaceMember member = workspaceMemberRepository
+            .findByWorkspaceIdAndUserId(channel.getWorkspaceId(), user.getId())
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        requireChannelManager(channel, member);
 
         channel.delete();
         channelRepository.save(channel);
@@ -106,10 +110,16 @@ public class ChannelService {
         Channel channel = getChannelOrThrow(channelId);
         requireWorkspaceMember(channel.getWorkspaceId(), user.getId());
 
-        return channelMemberRepository.findByChannelId(channelId).stream()
-            .map(m -> userRepository.findById(m.getUserId())
-                .map(u -> ChannelMemberResponse.from(m, u))
-                .orElse(null))
+        List<ChannelMember> members = channelMemberRepository.findByChannelId(channelId);
+        List<String> userIds = members.stream().map(ChannelMember::getUserId).toList();
+        Map<String, User> userMap = userRepository.findAllByIds(userIds).stream()
+            .collect(Collectors.toMap(User::getId, u -> u));
+        return members.stream()
+            .map(m -> {
+                User u = userMap.get(m.getUserId());
+                if (u == null) return null;
+                return ChannelMemberResponse.from(m, u);
+            })
             .filter(Objects::nonNull)
             .toList();
     }
@@ -118,8 +128,6 @@ public class ChannelService {
         User currentUser = getUser(cognitoSub);
         Channel channel = getChannelOrThrow(channelId);
         requireWorkspaceMember(channel.getWorkspaceId(), currentUser.getId());
-
-        // 추가 대상도 워크스페이스 멤버여야 함
         requireWorkspaceMember(channel.getWorkspaceId(), request.userId());
 
         if (channelMemberRepository.findByChannelIdAndUserId(channelId, request.userId()).isPresent()) {
@@ -146,8 +154,12 @@ public class ChannelService {
     }
 
     private void requireWorkspaceMember(String workspaceId, String userId) {
-        workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, userId)
+        WorkspaceMember member = workspaceMemberRepository
+            .findByWorkspaceIdAndUserId(workspaceId, userId)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        if (member.isPending()) {
+            throw new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
+        }
     }
 
     /** 채널 관리자 = 채널 생성자 OR 워크스페이스 ADMIN */

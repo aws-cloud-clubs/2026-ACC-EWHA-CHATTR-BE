@@ -1,3 +1,7 @@
 package com.acc.chattr.domain.workspace.dto;
 
-public record WorkspaceUpdateRequest(String name) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record WorkspaceUpdateRequest(
+    @NotBlank String name
+) {}
