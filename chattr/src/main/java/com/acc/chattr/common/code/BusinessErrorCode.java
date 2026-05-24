@@ -22,6 +22,7 @@ public enum BusinessErrorCode implements Code {
     CHANNEL_NOT_FOUND(404, "존재하지 않는 채널입니다."),
     CHANNEL_MEMBER_NOT_FOUND(404, "채널 멤버가 아닙니다."),
     CHANNEL_MEMBER_ALREADY_EXISTS(409, "이미 채널에 참여한 사용자입니다."),
+    NOT_CHANNEL_MANAGER(403, "채널 관리자(생성자 또는 워크스페이스 관리자)만 가능한 작업입니다."),
 
     // ==================== DM ====================
     DM_NOT_FOUND(404, "존재하지 않는 DM입니다."),

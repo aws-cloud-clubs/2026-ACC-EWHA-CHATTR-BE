@@ -83,9 +83,7 @@ public class ChannelService {
     public ChannelResponse update(String cognitoSub, String channelId, ChannelUpdateRequest request) {
         User user = getUser(cognitoSub);
         Channel channel = getChannelOrThrow(channelId);
-        WorkspaceMember member = workspaceMemberRepository
-            .findByWorkspaceIdAndUserId(channel.getWorkspaceId(), user.getId())
-            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        WorkspaceMember member = getActiveMemberOrThrow(channel.getWorkspaceId(), user.getId());
         requireChannelManager(channel, member);
 
         channel.updateInfo(request.name(), request.description(), request.topic());
@@ -96,9 +94,7 @@ public class ChannelService {
     public void delete(String cognitoSub, String channelId) {
         User user = getUser(cognitoSub);
         Channel channel = getChannelOrThrow(channelId);
-        WorkspaceMember member = workspaceMemberRepository
-            .findByWorkspaceIdAndUserId(channel.getWorkspaceId(), user.getId())
-            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
+        WorkspaceMember member = getActiveMemberOrThrow(channel.getWorkspaceId(), user.getId());
         requireChannelManager(channel, member);
 
         channel.delete();
@@ -153,20 +149,25 @@ public class ChannelService {
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_NOT_FOUND));
     }
 
-    private void requireWorkspaceMember(String workspaceId, String userId) {
+    private WorkspaceMember getActiveMemberOrThrow(String workspaceId, String userId) {
         WorkspaceMember member = workspaceMemberRepository
             .findByWorkspaceIdAndUserId(workspaceId, userId)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
         if (member.isPending()) {
             throw new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
         }
+        return member;
+    }
+
+    private void requireWorkspaceMember(String workspaceId, String userId) {
+        getActiveMemberOrThrow(workspaceId, userId);
     }
 
     /** 채널 관리자 = 채널 생성자 OR 워크스페이스 ADMIN */
     private void requireChannelManager(Channel channel, WorkspaceMember workspaceMember) {
         boolean isCreator = channel.getCreatedById().equals(workspaceMember.getUserId());
         if (!isCreator && !workspaceMember.isAdmin()) {
-            throw new BusinessException(BusinessErrorCode.NOT_WORKSPACE_ADMIN);
+            throw new BusinessException(BusinessErrorCode.NOT_CHANNEL_MANAGER);
         }
     }
 }

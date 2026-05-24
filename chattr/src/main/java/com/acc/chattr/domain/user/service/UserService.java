@@ -50,9 +50,14 @@ public class UserService {
             .toList();
     }
 
-    public List<UserResponse> getWorkspaceUsers(String workspaceId, String query) {
+    public List<UserResponse> getWorkspaceUsers(String cognitoSub, String workspaceId, String query) {
+        User requester = userRepository.findByCognitoSub(cognitoSub)
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.USER_NOT_FOUND));
         workspaceRepository.findById(workspaceId)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_NOT_FOUND));
+        workspaceMemberRepository.findByWorkspaceIdAndUserId(workspaceId, requester.getId())
+            .filter(m -> !m.isPending())
+            .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
         List<String> userIds = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
             .map(m -> m.getUserId())
             .toList();
