@@ -1,5 +1,6 @@
 package com.acc.chattr.config;
 
+import com.acc.chattr.domain.auth.entity.Device;
 import com.acc.chattr.domain.channel.entity.Channel;
 import com.acc.chattr.domain.channel.entity.ChannelMember;
 import com.acc.chattr.domain.dm.entity.Dm;
@@ -51,6 +52,9 @@ public class DynamoDbConfig {
 
     @Value("${chattr.dynamodb.table.message}")
     private String messageTableName;
+
+    @Value("${chattr.dynamodb.table.device}")
+    private String deviceTableName;
 
     @Bean
     public DynamoDbClient dynamoDbClient() {
@@ -105,5 +109,10 @@ public class DynamoDbConfig {
     @Bean
     public DynamoDbTable<Message> messageTable(DynamoDbEnhancedClient client) {
         return client.table(messageTableName, TableSchema.fromBean(Message.class));
+    }
+
+    @Bean
+    public DynamoDbTable<Device> deviceTable(DynamoDbEnhancedClient client) {
+        return client.table(deviceTableName, TableSchema.fromBean(Device.class));
     }
 }

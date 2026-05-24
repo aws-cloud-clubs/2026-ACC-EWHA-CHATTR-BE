@@ -1,5 +1,6 @@
 package com.acc.chattr.config;
 
+import com.acc.chattr.domain.auth.entity.Device;
 import com.acc.chattr.domain.channel.entity.Channel;
 import com.acc.chattr.domain.channel.entity.ChannelMember;
 import com.acc.chattr.domain.dm.entity.Dm;
@@ -36,6 +37,7 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
     private final DynamoDbTable<ChannelMember> channelMemberTable;
     private final DynamoDbTable<Dm> dmTable;
     private final DynamoDbTable<Message> messageTable;
+    private final DynamoDbTable<Device> deviceTable;
 
     @Value("${aws.dynamodb.endpoint:}")
     private String endpoint;
@@ -70,6 +72,10 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
             requestWithGsi("room-messages-index"));
 
         enableTtl(messageTable.tableName(), "ttl");
+
+        createTable(deviceTable,
+            CreateTableEnhancedRequest.builder()
+                .provisionedThroughput(defaultThroughput()).build());
 
         log.info("DynamoDB 테이블 준비 완료");
     }

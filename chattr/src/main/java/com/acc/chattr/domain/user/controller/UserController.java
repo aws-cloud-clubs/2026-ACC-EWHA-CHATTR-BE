@@ -30,9 +30,13 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<Response<List<UserResponse>>> getUsers(
+        @RequestParam(required = false) String workspaceId,
         @RequestParam(required = false) String query,
         @RequestParam(required = false) Boolean isOnline
     ) {
+        if (workspaceId != null && !workspaceId.isBlank()) {
+            return ResponseEntity.ok(Response.ok(userService.getWorkspaceUsers(workspaceId, query)));
+        }
         if (Boolean.TRUE.equals(isOnline)) {
             return ResponseEntity.ok(Response.ok(userService.getOnlineUsers()));
         }
