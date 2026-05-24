@@ -1,5 +1,6 @@
 package com.acc.chattr.config;
 
+import com.acc.chattr.domain.auth.entity.Device;
 import com.acc.chattr.domain.channel.entity.Channel;
 import com.acc.chattr.domain.channel.entity.ChannelMember;
 import com.acc.chattr.domain.dm.entity.Dm;
@@ -17,8 +18,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.model.CreateTableEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.EnhancedGlobalSecondaryIndex;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
 import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
 import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
@@ -36,6 +37,7 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
     private final DynamoDbTable<ChannelMember> channelMemberTable;
     private final DynamoDbTable<Dm> dmTable;
     private final DynamoDbTable<Message> messageTable;
+    private final DynamoDbTable<Device> deviceTable;
 
     @Value("${aws.dynamodb.endpoint:}")
     private String endpoint;
@@ -52,7 +54,7 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
 
         createTable(workspaceTable,
             CreateTableEnhancedRequest.builder()
-                .billingMode(BillingMode.PAY_PER_REQUEST).build());
+                .provisionedThroughput(defaultThroughput()).build());
 
         createTable(workspaceMemberTable,
             requestWithGsi("user-workspaces-index"));
@@ -70,6 +72,10 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
             requestWithGsi("room-messages-index"));
 
         enableTtl(messageTable.tableName(), "ttl");
+
+        createTable(deviceTable,
+            CreateTableEnhancedRequest.builder()
+                .provisionedThroughput(defaultThroughput()).build());
 
         log.info("DynamoDB 테이블 준비 완료");
     }
@@ -102,8 +108,16 @@ public class DynamoDbTableInitializer implements ApplicationRunner {
             .globalSecondaryIndices(EnhancedGlobalSecondaryIndex.builder()
                 .indexName(indexName)
                 .projection(p -> p.projectionType(ProjectionType.ALL))
+                .provisionedThroughput(defaultThroughput())
                 .build())
-            .billingMode(BillingMode.PAY_PER_REQUEST)
+            .provisionedThroughput(defaultThroughput())
+            .build();
+    }
+
+    private ProvisionedThroughput defaultThroughput() {
+        return ProvisionedThroughput.builder()
+            .readCapacityUnits(1L)
+            .writeCapacityUnits(1L)
             .build();
     }
 }
