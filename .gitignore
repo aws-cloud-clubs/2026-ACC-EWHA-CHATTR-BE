@@ -1,6 +1,13 @@
 # macOS
 .DS_Store
 
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
 # 개인 작업 폴더 & 내보내기
 개인 페이지 & 공유된 페이지/
 *.zip

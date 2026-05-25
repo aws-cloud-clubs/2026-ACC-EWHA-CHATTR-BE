@@ -12,7 +12,7 @@ logging:
 aws:
   region: ${AWS_REGION:ap-northeast-2}
   cognito:
-    user-pool-id: ${COGNITO_USER_POOL_ID:ap-northeast-2_test}
+    user-pool-id: ${COGNITO_USER_POOL_ID:local-placeholder}
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:}
   s3:
