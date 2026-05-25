@@ -1,17 +1,16 @@
 spring:
   application:
     name: chattr
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}/.well-known/jwks.json
-          issuer-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}
+
+logging:
+  level:
+    root: DEBUG
+    com.acc.chattr: DEBUG
 
 aws:
   region: ${AWS_REGION:ap-northeast-2}
   cognito:
-    user-pool-id: ${COGNITO_USER_POOL_ID}
+    user-pool-id: ${COGNITO_USER_POOL_ID:ap-northeast-2_test}
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:}
   s3:
@@ -30,3 +29,16 @@ chattr:
       dm: ${TABLE_DM:chattr-dev-dm}
       message: ${TABLE_MESSAGE:chattr-dev-message}
       device: ${TABLE_DEVICE:chattr-dev-device}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}/.well-known/jwks.json
+          issuer-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}
+
