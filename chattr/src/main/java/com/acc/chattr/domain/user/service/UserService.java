@@ -2,6 +2,7 @@ package com.acc.chattr.domain.user.service;
 
 import com.acc.chattr.common.code.BusinessErrorCode;
 import com.acc.chattr.common.exception.BusinessException;
+import com.acc.chattr.common.response.PageResponse;
 import com.acc.chattr.domain.user.dto.UserResponse;
 import com.acc.chattr.domain.user.entity.User;
 import com.acc.chattr.domain.user.repository.UserRepository;
@@ -32,16 +33,18 @@ public class UserService {
         return UserResponse.from(user);
     }
 
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+    public PageResponse<UserResponse> getAllUsers(int page, int size) {
+        List<UserResponse> all = userRepository.findAll().stream()
             .map(UserResponse::from)
             .toList();
+        return PageResponse.of(all, page, size);
     }
 
-    public List<UserResponse> searchUsers(String query) {
-        return userRepository.findByQuery(query).stream()
+    public PageResponse<UserResponse> searchUsers(String query, int page, int size) {
+        List<UserResponse> all = userRepository.findByQuery(query).stream()
             .map(UserResponse::from)
             .toList();
+        return PageResponse.of(all, page, size);
     }
 
     public List<UserResponse> getOnlineUsers() {
@@ -50,7 +53,7 @@ public class UserService {
             .toList();
     }
 
-    public List<UserResponse> getWorkspaceUsers(String cognitoSub, String workspaceId, String query) {
+    public PageResponse<UserResponse> getWorkspaceUsers(String cognitoSub, String workspaceId, String query, int page, int size) {
         User requester = userRepository.findByCognitoSub(cognitoSub)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.USER_NOT_FOUND));
         workspaceRepository.findById(workspaceId)
@@ -61,11 +64,12 @@ public class UserService {
         List<String> userIds = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
             .map(m -> m.getUserId())
             .toList();
-        return userRepository.findAllByIds(userIds).stream()
+        List<UserResponse> all = userRepository.findAllByIds(userIds).stream()
             .filter(u -> query == null || query.isBlank()
                 || u.getEmail().contains(query)
                 || u.getNickname().contains(query))
             .map(UserResponse::from)
             .toList();
+        return PageResponse.of(all, page, size);
     }
 }

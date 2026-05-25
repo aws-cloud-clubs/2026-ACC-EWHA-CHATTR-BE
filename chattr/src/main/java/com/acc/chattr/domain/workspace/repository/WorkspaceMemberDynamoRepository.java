@@ -55,4 +55,12 @@ public class WorkspaceMemberDynamoRepository implements WorkspaceMemberRepositor
             .filter(m -> !m.isDeleted() && !m.isPending())
             .toList();
     }
+
+    @Override
+    public void deleteAllByWorkspaceId(String workspaceId) {
+        table.query(QueryConditional.keyEqualTo(Key.builder().partitionValue(workspaceId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .forEach(table::deleteItem);
+    }
 }

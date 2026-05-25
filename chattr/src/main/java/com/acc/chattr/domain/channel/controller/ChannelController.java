@@ -1,5 +1,6 @@
 package com.acc.chattr.domain.channel.controller;
 
+import com.acc.chattr.common.response.PageResponse;
 import com.acc.chattr.common.response.Response;
 import com.acc.chattr.domain.channel.dto.AddMemberRequest;
 import com.acc.chattr.domain.channel.dto.ChannelMemberResponse;
@@ -43,7 +44,7 @@ public class ChannelController {
 
     @Operation(
         summary = "채널 목록 조회",
-        description = "특정 워크스페이스에 속한 채널 목록을 조회합니다. cursor 기반 pagination을 사용합니다."
+        description = "특정 워크스페이스에 속한 채널 목록을 조회합니다. page/size 기반 pagination을 사용합니다."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -52,11 +53,13 @@ public class ChannelController {
         @ApiResponse(responseCode = "404", description = "워크스페이스 없음")
     })
     @GetMapping
-    public ResponseEntity<Response<List<ChannelResponse>>> getChannels(
+    public ResponseEntity<Response<PageResponse<ChannelResponse>>> getChannels(
         @AuthenticationPrincipal Jwt jwt,
-        @Parameter(description = "워크스페이스 ID", required = true) @RequestParam String workspaceId
+        @Parameter(description = "워크스페이스 ID", required = true) @RequestParam String workspaceId,
+        @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(Response.ok(channelService.getChannels(jwt.getSubject(), workspaceId)));
+        return ResponseEntity.ok(Response.ok(channelService.getChannels(jwt.getSubject(), workspaceId, page, size)));
     }
 
     @Operation(

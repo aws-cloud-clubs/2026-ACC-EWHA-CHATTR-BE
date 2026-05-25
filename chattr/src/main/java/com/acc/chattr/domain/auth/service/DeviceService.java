@@ -50,6 +50,11 @@ public class DeviceService {
             .toList();
     }
 
+    public void logout(String cognitoSub) {
+        User user = getUser(cognitoSub);
+        deviceRepository.deleteAllByUserId(user.getId());
+    }
+
     private User getUser(String cognitoSub) {
         return userRepository.findByCognitoSub(cognitoSub)
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.USER_NOT_FOUND));

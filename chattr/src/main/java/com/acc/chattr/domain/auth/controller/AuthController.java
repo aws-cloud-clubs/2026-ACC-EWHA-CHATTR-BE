@@ -66,4 +66,18 @@ public class AuthController {
     ) {
         return ResponseEntity.ok(Response.ok(deviceService.getDevices(jwt.getSubject())));
     }
+
+    @Operation(
+        summary = "로그아웃",
+        description = "현재 로그인 세션을 만료 처리합니다. 해당 계정의 모든 디바이스 세션이 삭제됩니다."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Response<Void>> logout(@AuthenticationPrincipal Jwt jwt) {
+        deviceService.logout(jwt.getSubject());
+        return ResponseEntity.ok(Response.ok());
+    }
 }

@@ -41,4 +41,12 @@ public class DeviceDynamoRepository implements DeviceRepository {
             .filter(d -> !d.isDeleted())
             .toList();
     }
+
+    @Override
+    public void deleteAllByUserId(String userId) {
+        table.query(QueryConditional.keyEqualTo(Key.builder().partitionValue(userId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .forEach(table::deleteItem);
+    }
 }

@@ -86,6 +86,7 @@ public class WorkspaceService {
         requireAdmin(member);
         workspace.delete();
         workspaceRepository.save(workspace);
+        workspaceMemberRepository.deleteAllByWorkspaceId(workspaceId);
     }
 
     public List<WorkspaceMemberResponse> getMembers(String cognitoSub, String workspaceId) {
