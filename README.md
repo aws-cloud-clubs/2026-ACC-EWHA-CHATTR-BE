@@ -123,9 +123,12 @@ src/main/java/com/acc/chattr/
 │   │   ├── BusinessException.java
 │   │   ├── GeneralException.java
 │   │   └── GlobalExceptionHandler.java
-│   └── response/
-│       ├── PageResponse.java        # 페이지네이션 응답 래퍼
-│       └── Response.java            # 공통 응답 래퍼
+│   ├── response/
+│   │   ├── CursorPageResponse.java  # 커서 기반 페이지네이션 응답
+│   │   ├── PageResponse.java        # 오프셋 기반 페이지네이션 응답 (소규모 데이터 전용)
+│   │   └── Response.java            # 공통 응답 래퍼
+│   └── util/
+│       └── CursorUtils.java         # DynamoDB LastEvaluatedKey ↔ Base64 커서 변환
 │
 └── domain/
     ├── common/
@@ -249,7 +252,10 @@ src/main/java/com/acc/chattr/
 }
 ```
 
-### 페이지네이션 응답
+### 커서 기반 페이지네이션 응답
+
+`GET /users`, `GET /channels` 등 목록 조회 API에서 사용합니다.  
+DynamoDB `LastEvaluatedKey` 기반으로 동작하여 전체 데이터를 로드하지 않습니다.
 
 ```json
 {
@@ -258,14 +264,33 @@ src/main/java/com/acc/chattr/
   "message": "OK",
   "data": {
     "content": [ ],
-    "page": 0,
     "size": 20,
-    "totalElements": 100,
-    "totalPages": 5,
+    "nextCursor": "eyJpZCI6ImFiYzEyMyJ9",
     "hasNext": true
   }
 }
 ```
+
+| 필드 | 설명 |
+|------|------|
+| `content` | 현재 페이지 데이터 목록 |
+| `size` | 실제 반환된 항목 수 |
+| `nextCursor` | 다음 페이지 요청 시 사용할 커서 (`null`이면 마지막 페이지) |
+| `hasNext` | 다음 페이지 존재 여부 |
+
+**첫 페이지 요청** — `cursor` 파라미터 생략:
+```
+GET /channels?workspaceId={id}&size=20
+GET /users?size=20
+```
+
+**다음 페이지 요청** — 응답의 `nextCursor` 값을 그대로 전달:
+```
+GET /channels?workspaceId={id}&size=20&cursor=eyJpZCI6ImFiYzEyMyJ9
+GET /users?size=20&cursor=eyJpZCI6ImFiYzEyMyJ9
+```
+
+> `nextCursor`가 `null`이 될 때까지 반복 요청하면 전체 데이터를 순회할 수 있습니다.
 
 ### 응답 생성 방법
 
@@ -294,9 +319,12 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 | `WORKSPACE_MEMBER_NOT_FOUND` | 404 | 워크스페이스 멤버가 아닙니다. |
 | `WORKSPACE_MEMBER_ALREADY_EXISTS` | 409 | 이미 워크스페이스에 가입된 사용자입니다. |
 | `NOT_WORKSPACE_ADMIN` | 403 | 워크스페이스 관리자만 가능한 작업입니다. |
+| `LAST_WORKSPACE_ADMIN` | 409 | 워크스페이스에 최소 한 명의 관리자가 있어야 합니다. |
+| `WORKSPACE_INVITATION_NOT_FOUND` | 404 | 초대 내역이 없습니다. |
 | `CHANNEL_NOT_FOUND` | 404 | 존재하지 않는 채널입니다. |
 | `CHANNEL_MEMBER_NOT_FOUND` | 404 | 채널 멤버가 아닙니다. |
 | `CHANNEL_MEMBER_ALREADY_EXISTS` | 409 | 이미 채널에 참여한 사용자입니다. |
+| `NOT_CHANNEL_MANAGER` | 403 | 채널 관리자(생성자 또는 워크스페이스 관리자)만 가능한 작업입니다. |
 | `DM_NOT_FOUND` | 404 | 존재하지 않는 DM입니다. |
 | `DM_ALREADY_EXISTS` | 409 | 이미 DM이 존재합니다. |
 | `DM_NOT_PARTICIPANT` | 403 | DM 참여자가 아닙니다. |
@@ -307,8 +335,8 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 
 | 코드 | HTTP | 트리거 상황 |
 |------|------|------------|
-| `VALIDATION_ERROR` | 400 | `@Valid` 실패, `ConstraintViolation`, 빈 이름 등 |
-| `INVALID_REQUEST_PARAMETER` | 400 | 파라미터 누락·타입 불일치 |
+| `VALIDATION_ERROR` | 400 | `@Valid` 실패, `ConstraintViolation`, 빈 값 등 |
+| `INVALID_REQUEST_PARAMETER` | 400 | 파라미터 누락·타입 불일치·잘못된 커서 |
 | `BAD_REQUEST` | 400 | JSON 파싱 실패 등 |
 | `UNAUTHORIZED` | 401 | 미인증 접근 |
 | `INVALID_TOKEN` | 401 | 유효하지 않은 토큰 |
@@ -319,7 +347,7 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 | `USER_ALREADY_EXISTS` | 409 | 이미 가입된 이메일 |
 | `METHOD_NOT_ALLOWED` | 405 | 지원하지 않는 HTTP 메서드 |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Content-Type 불일치 |
-| `TOO_MANY_REQUESTS` | 429 | Cognito 요청 횟수 초과 |
+| `TOO_MANY_REQUESTS` | 429 | Cognito 요청 횟수 초과 (`Retry-After: 30` 헤더 포함) |
 | `INTERNAL_SERVER_ERROR` | 500 | 처리되지 않은 예외 |
 
 ### 에러 응답 예시
@@ -342,8 +370,8 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 ```
 POST /auth/signup   — 회원가입 (Cognito 계정 생성 + 즉시 활성화)
 POST /auth/login    — 로그인 → idToken / accessToken / refreshToken 반환
-POST /auth/refresh  — Refresh Token으로 토큰 갱신
-POST /auth/logout   — 로그아웃 (디바이스 세션 삭제)
+POST /auth/refresh  — Refresh Token으로 토큰 갱신 (username 필드 필요)
+POST /auth/logout   — 로그아웃 (Cognito Refresh Token 전체 무효화 + 디바이스 세션 삭제)
 ```
 
 ### API 요청 인증
@@ -354,3 +382,23 @@ POST /auth/logout   — 로그아웃 (디바이스 세션 삭제)
 4. `CognitoUserSyncFilter`가 첫 요청 시 DynamoDB에 유저 자동 생성
 
 > Swagger UI: Authorize 버튼 → `Bearer <idToken>` 입력
+
+### 토큰 갱신 시 주의
+
+`POST /auth/refresh` 요청 시 로그인 응답의 `username` 값을 함께 전달해야 합니다.  
+Cognito App Client Secret 사용 시 `SECRET_HASH` 계산에 필요합니다.
+
+```json
+{
+  "refreshToken": "...",
+  "username": "user@example.com"
+}
+```
+
+### 로그아웃 동작
+
+`POST /auth/logout`은 **모든 기기에서 로그아웃**합니다.
+
+- Cognito `AdminUserGlobalSignOut` 호출 → Refresh Token 전체 무효화
+- DB의 디바이스 세션 레코드 전체 삭제
+- 이미 발급된 ID/Access Token은 만료 시까지 유효합니다 (Cognito 구조상 즉시 무효화 불가)
