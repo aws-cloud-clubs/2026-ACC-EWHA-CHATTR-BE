@@ -1,8 +1,14 @@
 package com.acc.chattr.domain.auth.controller;
 
 import com.acc.chattr.common.response.Response;
+import com.acc.chattr.domain.auth.dto.ConfirmRequest;
 import com.acc.chattr.domain.auth.dto.DeviceResponse;
+import com.acc.chattr.domain.auth.dto.LoginRequest;
+import com.acc.chattr.domain.auth.dto.RefreshRequest;
 import com.acc.chattr.domain.auth.dto.RegisterDeviceRequest;
+import com.acc.chattr.domain.auth.dto.SignupRequest;
+import com.acc.chattr.domain.auth.dto.TokenResponse;
+import com.acc.chattr.domain.auth.service.CognitoAuthService;
 import com.acc.chattr.domain.auth.service.DeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,16 +28,59 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "인증", description = "로그인, 토큰 갱신, 디바이스 세션 관련 API")
-@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "인증", description = "회원가입, 로그인, 토큰 갱신, 디바이스 세션 관련 API")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
+    private final CognitoAuthService cognitoAuthService;
     private final DeviceService deviceService;
 
-    public AuthController(DeviceService deviceService) {
+    public AuthController(CognitoAuthService cognitoAuthService, DeviceService deviceService) {
+        this.cognitoAuthService = cognitoAuthService;
         this.deviceService = deviceService;
+    }
+
+    @Operation(summary = "회원가입", description = "Cognito에 계정을 생성합니다. 가입 후 이메일로 인증 코드가 발송됩니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "회원가입 성공 — 이메일 인증 필요"),
+        @ApiResponse(responseCode = "400", description = "요청 값 오류")
+    })
+    @PostMapping("/signup")
+    public ResponseEntity<Response<Void>> signup(@RequestBody @Valid SignupRequest request) {
+        cognitoAuthService.signup(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Response.ok());
+    }
+
+    @Operation(summary = "이메일 인증", description = "회원가입 후 이메일로 받은 인증 코드를 확인합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "인증 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 인증 코드")
+    })
+    @PostMapping("/confirm")
+    public ResponseEntity<Response<Void>> confirm(@RequestBody @Valid ConfirmRequest request) {
+        cognitoAuthService.confirm(request);
+        return ResponseEntity.ok(Response.ok());
+    }
+
+    @Operation(summary = "로그인", description = "이메일/비밀번호로 로그인합니다. 반환된 idToken을 Authorization 헤더에 사용하세요.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "로그인 성공"),
+        @ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호 오류")
+    })
+    @PostMapping("/login")
+    public ResponseEntity<Response<TokenResponse>> login(@RequestBody @Valid LoginRequest request) {
+        return ResponseEntity.ok(Response.ok(cognitoAuthService.login(request)));
+    }
+
+    @Operation(summary = "토큰 갱신", description = "Refresh Token으로 새 Access/ID Token을 발급합니다. username은 로그인 응답의 username 값입니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
+        @ApiResponse(responseCode = "401", description = "유효하지 않은 Refresh Token")
+    })
+    @PostMapping("/refresh")
+    public ResponseEntity<Response<TokenResponse>> refresh(@RequestBody @Valid RefreshRequest request) {
+        return ResponseEntity.ok(Response.ok(cognitoAuthService.refresh(request)));
     }
 
     @Operation(
