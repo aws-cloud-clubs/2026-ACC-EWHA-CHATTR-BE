@@ -13,7 +13,7 @@ public class MessageService {
     private final RedisTemplate<String, MessageSendRequest> redisTemplate;
     private final ChannelTopic chatTopic;
 
-    public void publishMessage(MessageSendRequest request) {
+    public void publishMessage(MessageSendRequest request, String senderId) {
         redisTemplate.convertAndSend(
                 chatTopic.getTopic(),
                 request

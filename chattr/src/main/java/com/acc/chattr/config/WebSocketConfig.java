@@ -3,6 +3,7 @@ package com.acc.chattr.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -15,7 +16,9 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${chattr.websocket.allowed-origins}")
+    private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
+
+    @Value("${chattr.websocket.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
 
     @Override
@@ -27,6 +30,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(originPatterns)
                 .withSockJS();
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompAuthChannelInterceptor);
     }
 
     @Override
