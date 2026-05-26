@@ -123,14 +123,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(Response.fail(GeneralErrorCode.BAD_REQUEST));
     }
 
-    // ==================== 입력값 ====================
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Response<Void>> handleIllegalArgument(IllegalArgumentException e) {
-        log.warn("IllegalArgument: {}", e.getMessage());
-        return ResponseEntity.status(400).body(Response.fail(GeneralErrorCode.VALIDATION_ERROR));
-    }
-
     // ==================== Cognito ====================
 
     @ExceptionHandler(UserNotConfirmedException.class)

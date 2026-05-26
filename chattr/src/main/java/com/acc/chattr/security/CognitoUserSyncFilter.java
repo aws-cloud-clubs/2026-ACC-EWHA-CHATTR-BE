@@ -1,5 +1,7 @@
 package com.acc.chattr.security;
 
+import com.acc.chattr.common.code.GeneralErrorCode;
+import com.acc.chattr.common.exception.GeneralException;
 import com.acc.chattr.domain.user.entity.User;
 import com.acc.chattr.domain.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -36,7 +38,7 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
                 userRepository.findByCognitoSub(cognitoSub).orElseGet(() -> {
                     String email = jwt.getClaimAsString("email");
                     if (email == null || email.isBlank()) {
-                        throw new IllegalStateException("JWT에 email 클레임이 없습니다. sub=" + cognitoSub);
+                        throw new GeneralException(GeneralErrorCode.INVALID_TOKEN);
                     }
                     String nickname = jwt.getClaimAsString("nickname");
                     if (nickname == null || nickname.isBlank()) {
@@ -48,8 +50,12 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
                     log.debug("CognitoUserSyncFilter: 유저 생성 완료 id={}", newUser.getId());
                     return newUser;
                 });
+            } catch (GeneralException e) {
+                log.warn("CognitoUserSyncFilter: 유저 동기화 거부 sub={} code={}", cognitoSub, e.getErrorCode());
+                response.sendError(e.getErrorCode().getStatusCode(), e.getErrorCode().getMessage());
+                return;
             } catch (Exception e) {
-                log.error("CognitoUserSyncFilter: 유저 동기화 실패 sub={} error={}", cognitoSub, e.getMessage());
+                log.error("CognitoUserSyncFilter: 유저 동기화 실패 sub={}", cognitoSub, e);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "유저 동기화에 실패했습니다.");
                 return;
             }

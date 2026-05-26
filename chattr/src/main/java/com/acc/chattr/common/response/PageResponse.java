@@ -1,5 +1,8 @@
 package com.acc.chattr.common.response;
 
+import com.acc.chattr.common.code.GeneralErrorCode;
+import com.acc.chattr.common.exception.GeneralException;
+
 import java.util.List;
 import java.util.function.Function;
 
@@ -33,7 +36,6 @@ public record PageResponse<T>(
     }
 
     private static void validate(int page, int size) {
-        if (page < 0) throw new IllegalArgumentException("page must be >= 0");
-        if (size <= 0) throw new IllegalArgumentException("size must be > 0");
+        if (page < 0 || size <= 0) throw new GeneralException(GeneralErrorCode.VALIDATION_ERROR);
     }
 }
