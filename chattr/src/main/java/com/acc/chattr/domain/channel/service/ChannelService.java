@@ -97,6 +97,7 @@ public class ChannelService {
         WorkspaceMember member = getActiveMemberOrThrow(channel.getWorkspaceId(), user.getId());
         requireChannelManager(channel, member);
 
+        channelMemberRepository.deleteAllByChannelId(channelId);
         channel.delete();
         channelRepository.save(channel);
     }
