@@ -99,10 +99,13 @@ public class WorkspaceService {
         for (String channelId : channelIds) {
             channelMemberRepository.deleteAllByChannelId(channelId);
         }
-        channelRepository.findByWorkspaceId(workspaceId).forEach(channel -> {
-            channel.delete();
-            channelRepository.save(channel);
-        });
+        // 활성 채널만 soft delete (삭제된 채널은 이미 처리됨)
+        channelRepository.findByWorkspaceId(workspaceId, Integer.MAX_VALUE, null)
+            .content()
+            .forEach(channel -> {
+                channel.delete();
+                channelRepository.save(channel);
+            });
         workspaceMemberRepository.deleteAllByWorkspaceId(workspaceId);
 
         workspace.delete();

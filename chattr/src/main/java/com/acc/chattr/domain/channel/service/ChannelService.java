@@ -2,7 +2,7 @@ package com.acc.chattr.domain.channel.service;
 
 import com.acc.chattr.common.code.BusinessErrorCode;
 import com.acc.chattr.common.exception.BusinessException;
-import com.acc.chattr.common.response.PageResponse;
+import com.acc.chattr.common.response.CursorPageResponse;
 import com.acc.chattr.domain.channel.dto.AddMemberRequest;
 import com.acc.chattr.domain.channel.dto.ChannelCreateRequest;
 import com.acc.chattr.domain.channel.dto.ChannelMemberResponse;
@@ -65,12 +65,17 @@ public class ChannelService {
         return ChannelResponse.from(channel);
     }
 
-    public PageResponse<ChannelResponse> getChannels(String cognitoSub, String workspaceId, int page, int size) {
+    public CursorPageResponse<ChannelResponse> getChannels(String cognitoSub, String workspaceId,
+                                                            int size, String cursor) {
         User user = getUser(cognitoSub);
         requireWorkspaceExists(workspaceId);
         requireWorkspaceMember(workspaceId, user.getId());
 
-        return PageResponse.of(channelRepository.findByWorkspaceId(workspaceId), page, size, ChannelResponse::from);
+        CursorPageResponse<Channel> page = channelRepository.findByWorkspaceId(workspaceId, size, cursor);
+        return CursorPageResponse.of(
+            page.content().stream().map(ChannelResponse::from).toList(),
+            page.nextCursor()
+        );
     }
 
     public ChannelResponse getChannel(String cognitoSub, String channelId) {

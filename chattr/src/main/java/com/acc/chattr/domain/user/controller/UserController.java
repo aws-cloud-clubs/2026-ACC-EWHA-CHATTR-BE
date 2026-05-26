@@ -1,6 +1,6 @@
 package com.acc.chattr.domain.user.controller;
 
-import com.acc.chattr.common.response.PageResponse;
+import com.acc.chattr.common.response.CursorPageResponse;
 import com.acc.chattr.common.response.Response;
 import com.acc.chattr.domain.user.dto.UserResponse;
 import com.acc.chattr.domain.user.service.UserService;
@@ -62,7 +62,7 @@ public class UserController {
         @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @GetMapping
-    public ResponseEntity<Response<PageResponse<UserResponse>>> getUsers(
+    public ResponseEntity<Response<CursorPageResponse<UserResponse>>> getUsers(
         @AuthenticationPrincipal Jwt jwt,
         @Parameter(description = "워크스페이스 ID (지정 시 워크스페이스 소속 유저 조회)")
         @RequestParam(required = false) String workspaceId,
@@ -70,18 +70,19 @@ public class UserController {
         @RequestParam(required = false) String query,
         @Parameter(description = "온라인 상태 필터 (true 지정 시 온라인 유저만 반환)")
         @RequestParam(required = false) Boolean isOnline,
-        @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") @Min(0) int page,
-        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") @Min(1) int size
+        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") @Min(1) int size,
+        @Parameter(description = "다음 페이지 커서 (첫 페이지는 생략)") @RequestParam(required = false) String cursor
     ) {
         if (workspaceId != null && !workspaceId.isBlank()) {
-            return ResponseEntity.ok(Response.ok(userService.getWorkspaceUsers(jwt.getSubject(), workspaceId, query, page, size)));
+            return ResponseEntity.ok(Response.ok(
+                userService.getWorkspaceUsers(jwt.getSubject(), workspaceId, query, size, cursor)));
         }
         if (Boolean.TRUE.equals(isOnline)) {
-            return ResponseEntity.ok(Response.ok(userService.getOnlineUsers(page, size)));
+            return ResponseEntity.ok(Response.ok(userService.getOnlineUsers(size, cursor)));
         }
         if (query != null && !query.isBlank()) {
-            return ResponseEntity.ok(Response.ok(userService.searchUsers(query, page, size)));
+            return ResponseEntity.ok(Response.ok(userService.searchUsers(query, size, cursor)));
         }
-        return ResponseEntity.ok(Response.ok(userService.getAllUsers(page, size)));
+        return ResponseEntity.ok(Response.ok(userService.getAllUsers(size, cursor)));
     }
 }

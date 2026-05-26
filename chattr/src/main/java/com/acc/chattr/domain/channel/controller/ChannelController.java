@@ -1,6 +1,6 @@
 package com.acc.chattr.domain.channel.controller;
 
-import com.acc.chattr.common.response.PageResponse;
+import com.acc.chattr.common.response.CursorPageResponse;
 import com.acc.chattr.common.response.Response;
 import com.acc.chattr.domain.channel.dto.AddMemberRequest;
 import com.acc.chattr.domain.channel.dto.ChannelMemberResponse;
@@ -56,13 +56,13 @@ public class ChannelController {
         @ApiResponse(responseCode = "404", description = "워크스페이스 없음")
     })
     @GetMapping
-    public ResponseEntity<Response<PageResponse<ChannelResponse>>> getChannels(
+    public ResponseEntity<Response<CursorPageResponse<ChannelResponse>>> getChannels(
         @AuthenticationPrincipal Jwt jwt,
         @Parameter(description = "워크스페이스 ID", required = true) @RequestParam String workspaceId,
-        @Parameter(description = "페이지 번호 (0부터 시작)") @Min(0) @RequestParam(defaultValue = "0") int page,
-        @Parameter(description = "페이지 크기") @Min(1) @RequestParam(defaultValue = "20") int size
+        @Parameter(description = "페이지 크기") @Min(1) @RequestParam(defaultValue = "20") int size,
+        @Parameter(description = "다음 페이지 커서 (첫 페이지는 생략)") @RequestParam(required = false) String cursor
     ) {
-        return ResponseEntity.ok(Response.ok(channelService.getChannels(jwt.getSubject(), workspaceId, page, size)));
+        return ResponseEntity.ok(Response.ok(channelService.getChannels(jwt.getSubject(), workspaceId, size, cursor)));
     }
 
     @Operation(
