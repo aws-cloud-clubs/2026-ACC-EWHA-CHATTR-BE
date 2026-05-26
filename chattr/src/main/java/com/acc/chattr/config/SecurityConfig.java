@@ -1,6 +1,7 @@
 package com.acc.chattr.config;
 
 import com.acc.chattr.security.CognitoUserSyncFilter;
+import com.acc.chattr.security.JwtAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final CognitoUserSyncFilter cognitoUserSyncFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Value("${aws.cognito.user-pool-id}")
     private String userPoolId;
@@ -24,8 +26,10 @@ public class SecurityConfig {
     @Value("${aws.region}")
     private String region;
 
-    public SecurityConfig(CognitoUserSyncFilter cognitoUserSyncFilter) {
+    public SecurityConfig(CognitoUserSyncFilter cognitoUserSyncFilter,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
         this.cognitoUserSyncFilter = cognitoUserSyncFilter;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
     }
 
     @Bean
@@ -47,7 +51,9 @@ public class SecurityConfig {
                 .requestMatchers("/health", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> {})
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .addFilterAfter(cognitoUserSyncFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
