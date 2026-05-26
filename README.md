@@ -64,14 +64,14 @@ bash create-tables.sh --endpoint http://localhost:8000
 | `COGNITO_CLIENT_ID` | Cognito 앱 클라이언트 ID | — |
 | `COGNITO_CLIENT_SECRET` | Cognito 앱 클라이언트 시크릿 | — |
 | `DYNAMODB_ENDPOINT` | DynamoDB 엔드포인트 (비우면 AWS 기본값) | — |
-| `TABLE_USER` | user 테이블명 | `chattr-dev-user` |
-| `TABLE_WORKSPACE` | workspace 테이블명 | `chattr-dev-workspace` |
-| `TABLE_WORKSPACE_MEMBER` | workspace-member 테이블명 | `chattr-dev-workspace-member` |
-| `TABLE_CHANNEL` | channel 테이블명 | `chattr-dev-channel` |
-| `TABLE_CHANNEL_MEMBER` | channel-member 테이블명 | `chattr-dev-channel-member` |
-| `TABLE_DM` | dm 테이블명 | `chattr-dev-dm` |
-| `TABLE_MESSAGE` | message 테이블명 | `chattr-dev-message` |
-| `TABLE_DEVICE` | device 테이블명 | `chattr-dev-device` |
+| `TABLE_USER` | user 테이블명 | `user` |
+| `TABLE_WORKSPACE` | workspace 테이블명 | `workspace` |
+| `TABLE_WORKSPACE_MEMBER` | workspace-member 테이블명 | `workspace-member` |
+| `TABLE_CHANNEL` | channel 테이블명 | `channel` |
+| `TABLE_CHANNEL_MEMBER` | channel-member 테이블명 | `channel-member` |
+| `TABLE_DM` | dm 테이블명 | `dm` |
+| `TABLE_MESSAGE` | message 테이블명 | `message` |
+| `TABLE_DEVICE` | device 테이블명 | `device` |
 | `S3_BUCKET` | S3 버킷명 | `chattr-dev-files` |
 | `S3_PRESIGN_EXPIRY_MINUTES` | Presigned URL 유효 시간(분) | `10` |
 | `S3_ENDPOINT` | S3 엔드포인트 (비우면 AWS 기본값) | — |
