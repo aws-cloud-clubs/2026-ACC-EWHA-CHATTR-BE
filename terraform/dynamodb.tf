@@ -210,3 +210,25 @@ resource "aws_dynamodb_table" "message" {
 
   tags = local.tags
 }
+
+# ──────────────────────────────────────────
+# device
+# PK: userId  SK: deviceId
+# ──────────────────────────────────────────
+resource "aws_dynamodb_table" "device" {
+  name         = "${local.prefix}-device"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "userId"
+  range_key    = "deviceId"
+
+  attribute {
+    name = "userId"
+    type = "S"
+  }
+  attribute {
+    name = "deviceId"
+    type = "S"
+  }
+
+  tags = local.tags
+}

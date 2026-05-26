@@ -11,3 +11,11 @@ terraform {
 provider "aws" {
   region = var.aws_region
 }
+
+locals {
+  app_port = 8080
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
