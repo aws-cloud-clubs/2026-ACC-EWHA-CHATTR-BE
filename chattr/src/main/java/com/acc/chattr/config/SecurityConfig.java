@@ -11,7 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -55,7 +55,7 @@ public class SecurityConfig {
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> {})
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint))
-            .addFilterAfter(cognitoUserSyncFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterAfter(cognitoUserSyncFilter, BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 }

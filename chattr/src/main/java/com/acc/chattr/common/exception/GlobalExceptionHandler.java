@@ -38,9 +38,10 @@ public class GlobalExceptionHandler {
     // ==================== 커스텀 예외 ====================
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<Response<Void>> handleBusinessException(BusinessException e) {
+    public ResponseEntity<Response<Void>> handleBusinessException(BusinessException e,
+            jakarta.servlet.http.HttpServletRequest request) {
         BusinessErrorCode code = e.getBusinessErrorCode();
-        log.warn("BusinessException: {} - {}", code.name(), e.getMessage());
+        log.warn("BusinessException: {} - {} [{}]", code.name(), e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(code.getStatusCode()).body(Response.fail(code));
     }
 
