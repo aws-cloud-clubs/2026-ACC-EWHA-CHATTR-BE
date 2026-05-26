@@ -6,33 +6,46 @@ Chattr 백엔드 서버 — Spring Boot + AWS DynamoDB + Cognito
 
 - **Java 17** / Spring Boot 4
 - **AWS DynamoDB** (Enhanced Client v2)
-- **AWS Cognito** — JWT 기반 인증
-- **Terraform** — 프로덕션 인프라 관리
+- **AWS Cognito** — JWT 기반 인증 (회원가입/로그인 API 포함)
+- **AWS S3** — 파일 업로드 / Presigned URL
 
 ---
 
 ## 로컬 개발 환경 실행
 
 ### 사전 준비
-- Docker
+
 - JDK 17
-- (프로덕션 배포 시) Terraform, AWS CLI
+- AWS CLI (실제 AWS DynamoDB 사용 시)
 
-### 1. DynamoDB Local 컨테이너 시작
+### 1. 환경변수 설정
 
-```bash
-docker-compose up -d
-```
-
-포트 `8000`에 DynamoDB Local이 실행됩니다.
-
-### 2. 환경변수 설정
+`.env.example`을 복사해서 `.env`를 만들고 값을 채웁니다.
 
 ```bash
-export DYNAMODB_ENDPOINT=http://localhost:8000
-export AWS_REGION=ap-northeast-2
-export COGNITO_USER_POOL_ID=local-dummy   # 로컬에선 아무 값이나 가능
+cp .env.example .env
+# .env 파일 편집
 ```
+
+로컬에서 실제 AWS DynamoDB를 사용하는 경우 `DYNAMODB_ENDPOINT`를 비워두면 됩니다.
+
+```bash
+export $(grep -v '^#' .env | xargs)
+```
+
+### 2. DynamoDB 테이블 생성
+
+테이블이 없는 경우 `create-tables.sh`로 생성합니다.
+
+```bash
+# 실제 AWS (리전 기본값: ap-northeast-2)
+bash create-tables.sh
+
+# 엔드포인트 직접 지정 (DynamoDB Local 등)
+bash create-tables.sh --endpoint http://localhost:8000
+```
+
+> `DynamoDbTableInitializer`가 로컬 실행 시(`DYNAMODB_ENDPOINT` 세팅된 경우) 테이블을 자동 생성합니다. 이미 존재하면 무시합니다.
 
 ### 3. 앱 실행
 
@@ -40,50 +53,28 @@ export COGNITO_USER_POOL_ID=local-dummy   # 로컬에선 아무 값이나 가능
 ./gradlew bootRun
 ```
 
-앱이 시작될 때 `DynamoDbTableInitializer`가 DynamoDB Local에 7개 테이블과 GSI를 자동 생성합니다.
-이미 테이블이 존재하면 그냥 넘어가므로 재시작해도 안전합니다.
-
 ---
 
-## 프로덕션 배포
+## 필수 환경변수
 
-### 1. Terraform으로 DynamoDB 테이블 생성
-
-```bash
-cd terraform
-terraform init
-terraform apply -var="env=prod"
-```
-
-완료 후 출력되는 `table_names`를 환경변수로 설정합니다.
-
-```
-table_names = {
-  TABLE_CHANNEL          = "chattr-prod-channel"
-  TABLE_CHANNEL_MEMBER   = "chattr-prod-channel-member"
-  TABLE_DM               = "chattr-prod-dm"
-  TABLE_MESSAGE          = "chattr-prod-message"
-  TABLE_USER             = "chattr-prod-user"
-  TABLE_WORKSPACE        = "chattr-prod-workspace"
-  TABLE_WORKSPACE_MEMBER = "chattr-prod-workspace-member"
-}
-```
-
-### 2. 필수 환경변수
-
-| 변수 | 설명 |
-|------|------|
-| `AWS_REGION` | AWS 리전 (기본값: `ap-northeast-2`) |
-| `COGNITO_USER_POOL_ID` | Cognito User Pool ID |
-| `TABLE_USER` | DynamoDB 유저 테이블명 |
-| `TABLE_WORKSPACE` | DynamoDB 워크스페이스 테이블명 |
-| `TABLE_WORKSPACE_MEMBER` | DynamoDB 워크스페이스 멤버 테이블명 |
-| `TABLE_CHANNEL` | DynamoDB 채널 테이블명 |
-| `TABLE_CHANNEL_MEMBER` | DynamoDB 채널 멤버 테이블명 |
-| `TABLE_DM` | DynamoDB DM 테이블명 |
-| `TABLE_MESSAGE` | DynamoDB 메시지 테이블명 |
-
-`DYNAMODB_ENDPOINT`를 세팅하지 않으면 실제 AWS DynamoDB에 연결됩니다.
+| 변수 | 설명 | 기본값 |
+|------|------|--------|
+| `AWS_REGION` | AWS 리전 | `ap-northeast-2` |
+| `COGNITO_USER_POOL_ID` | Cognito User Pool ID | — |
+| `COGNITO_CLIENT_ID` | Cognito 앱 클라이언트 ID | — |
+| `COGNITO_CLIENT_SECRET` | Cognito 앱 클라이언트 시크릿 | — |
+| `DYNAMODB_ENDPOINT` | DynamoDB 엔드포인트 (비우면 AWS 기본값) | — |
+| `TABLE_USER` | user 테이블명 | `chattr-dev-user` |
+| `TABLE_WORKSPACE` | workspace 테이블명 | `chattr-dev-workspace` |
+| `TABLE_WORKSPACE_MEMBER` | workspace-member 테이블명 | `chattr-dev-workspace-member` |
+| `TABLE_CHANNEL` | channel 테이블명 | `chattr-dev-channel` |
+| `TABLE_CHANNEL_MEMBER` | channel-member 테이블명 | `chattr-dev-channel-member` |
+| `TABLE_DM` | dm 테이블명 | `chattr-dev-dm` |
+| `TABLE_MESSAGE` | message 테이블명 | `chattr-dev-message` |
+| `TABLE_DEVICE` | device 테이블명 | `chattr-dev-device` |
+| `S3_BUCKET` | S3 버킷명 | `chattr-dev-files` |
+| `S3_PRESIGN_EXPIRY_MINUTES` | Presigned URL 유효 시간(분) | `10` |
+| `S3_ENDPOINT` | S3 엔드포인트 (비우면 AWS 기본값) | — |
 
 ---
 
@@ -91,101 +82,154 @@ table_names = {
 
 | 테이블 | PK | SK | GSI |
 |--------|----|----|-----|
-| `chattr-{env}-user` | `id` | — | `cognito-sub-index` (PK: `cognitoSub`) |
-| `chattr-{env}-workspace` | `id` | — | — |
-| `chattr-{env}-workspace-member` | `workspaceId` | `userId` | `user-workspaces-index` (PK: `userId`, SK: `workspaceId`) |
-| `chattr-{env}-channel` | `id` | — | `workspace-channels-index` (PK: `workspaceId`) |
-| `chattr-{env}-channel-member` | `channelId` | `userId` | `user-channels-index` (PK: `userId`, SK: `channelId`) |
-| `chattr-{env}-dm` | `id` | — | `dm-users-index` (PK: `userAId`, SK: `userBId`) |
-| `chattr-{env}-message` | `id` | — | `room-messages-index` (PK: `roomId`, SK: `createdAt`), TTL: `ttl` |
+| `user` | `id` | — | `cognito-sub-index` (PK: `cognitoSub`) |
+| `workspace` | `id` | — | — |
+| `workspace-member` | `workspaceId` | `userId` | `user-workspaces-index` (PK: `userId`, SK: `workspaceId`) |
+| `channel` | `id` | — | `workspace-channels-index` (PK: `workspaceId`) |
+| `channel-member` | `channelId` | `userId` | `user-channels-index` (PK: `userId`, SK: `channelId`) |
+| `dm` | `id` | — | `dm-users-index` (PK: `userAId`, SK: `userBId`) |
+| `message` | `id` | — | `room-messages-index` (PK: `roomId`, SK: `createdAt`), TTL: `ttl` |
+| `device` | `userId` | `deviceId` | — |
+
+> 테이블명은 환경변수(`TABLE_*`)로 재정의 가능합니다.
 
 ---
 
 ## 패키지 구조
-
-도메인 단위로 패키지를 구성합니다. 각 도메인 폴더 아래 `controller/`, `service/`, `dto/`, `entity/`, `repository/` 레이어를 둡니다.
 
 ```
 src/main/java/com/acc/chattr/
 │
 ├── ChattrApplication.java
 │
-├── config/                              # 스프링 설정
-│   ├── DynamoDbConfig.java              # DynamoDB 클라이언트 & 테이블 빈 등록
-│   ├── DynamoDbTableInitializer.java    # 로컬 실행 시 테이블 자동 생성
-│   └── SecurityConfig.java             # Cognito JWT 인증 설정
+├── config/
+│   ├── CognitoConfig.java           # CognitoIdentityProviderClient 빈
+│   ├── DynamoDbConfig.java          # DynamoDB 클라이언트 & 테이블 빈 등록
+│   ├── DynamoDbTableInitializer.java # 로컬 실행 시 테이블 자동 생성
+│   ├── OpenApiConfig.java           # Swagger / SpringDoc 설정
+│   ├── S3Config.java                # S3 클라이언트 빈
+│   └── SecurityConfig.java          # Cognito JWT 인증 설정
 │
 ├── security/
-│   └── CognitoUserSyncFilter.java       # JWT 검증 후 첫 로그인 시 유저 자동 생성
+│   ├── CognitoUserSyncFilter.java   # JWT 인증 후 첫 요청 시 DynamoDB 유저 자동 생성
+│   └── JwtAuthenticationEntryPoint.java # 미인증 요청 시 JSON 401 반환
 │
-├── common/                              # 공통 인프라 (도메인 무관)
+├── common/
 │   ├── code/
-│   │   ├── Code.java                    # 에러코드 인터페이스
-│   │   ├── BusinessErrorCode.java       # 도메인 에러코드
-│   │   └── GeneralErrorCode.java        # HTTP 공통 에러코드
+│   │   ├── Code.java
+│   │   ├── BusinessErrorCode.java   # 도메인 에러코드
+│   │   └── GeneralErrorCode.java    # HTTP 공통 + Cognito 에러코드
 │   ├── exception/
 │   │   ├── BusinessException.java
 │   │   ├── GeneralException.java
-│   │   └── GlobalExceptionHandler.java  # @RestControllerAdvice
+│   │   └── GlobalExceptionHandler.java
 │   └── response/
-│       └── Response.java             # 공통 응답 래퍼
+│       ├── PageResponse.java        # 페이지네이션 응답 래퍼
+│       └── Response.java            # 공통 응답 래퍼
 │
-└── domain/                              # 도메인별 패키지 (기능 단위)
+└── domain/
     ├── common/
-    │   └── BaseEntity.java              # createdAt, deletedAt 공통 필드
+    │   └── BaseEntity.java          # createdAt, deletedAt 공통 필드
     │
-    ├── health/                          # 각 도메인은 아래 레이어를 필요한 만큼 가짐
+    ├── auth/
+    │   ├── controller/
+    │   │   └── AuthController.java  # /auth/signup, /auth/login, /auth/refresh, /auth/logout 등
+    │   ├── dto/
+    │   │   ├── LoginRequest.java
+    │   │   ├── SignupRequest.java
+    │   │   ├── RefreshRequest.java
+    │   │   ├── TokenResponse.java
+    │   │   ├── DeviceResponse.java
+    │   │   └── RegisterDeviceRequest.java
+    │   ├── entity/
+    │   │   └── Device.java
+    │   ├── repository/
+    │   │   ├── DeviceRepository.java
+    │   │   └── DeviceDynamoRepository.java
+    │   └── service/
+    │       ├── CognitoAuthService.java
+    │       └── DeviceService.java
+    │
+    ├── health/
     │   ├── controller/
     │   │   └── HealthController.java
     │   └── dto/
     │       └── HealthResponse.java
     │
     ├── user/
-    │   ├── controller/                  # (미구현)
-    │   ├── service/                     # (미구현)
-    │   ├── dto/                         # (미구현)
+    │   ├── controller/
+    │   │   └── UserController.java
+    │   ├── dto/
+    │   │   └── UserResponse.java
     │   ├── entity/
     │   │   └── User.java
-    │   └── repository/
-    │       ├── UserRepository.java
-    │       └── UserDynamoRepository.java
+    │   ├── repository/
+    │   │   ├── UserRepository.java
+    │   │   └── UserDynamoRepository.java
+    │   └── service/
+    │       └── UserService.java
     │
     ├── workspace/
-    │   ├── controller/                  # (미구현)
-    │   ├── service/                     # (미구현)
-    │   ├── dto/                         # (미구현)
+    │   ├── controller/
+    │   │   └── WorkspaceController.java
+    │   ├── dto/
+    │   │   ├── WorkspaceCreateRequest.java
+    │   │   ├── WorkspaceUpdateRequest.java
+    │   │   ├── WorkspaceResponse.java
+    │   │   ├── WorkspaceMemberResponse.java
+    │   │   ├── InviteRequest.java
+    │   │   └── ChangeRoleRequest.java
     │   ├── entity/
     │   │   ├── Workspace.java
     │   │   ├── WorkspaceMember.java
-    │   │   └── WorkspaceRole.java       # ADMIN | MEMBER
-    │   └── repository/
-    │       └── WorkspaceRoleConverter.java
+    │   │   └── WorkspaceRole.java   # ADMIN | MEMBER
+    │   ├── repository/
+    │   │   ├── WorkspaceRepository.java
+    │   │   ├── WorkspaceDynamoRepository.java
+    │   │   ├── WorkspaceMemberRepository.java
+    │   │   ├── WorkspaceMemberDynamoRepository.java
+    │   │   └── WorkspaceRoleConverter.java
+    │   └── service/
+    │       └── WorkspaceService.java
     │
     ├── channel/
-    │   ├── controller/                  # (미구현)
-    │   ├── service/                     # (미구현)
-    │   ├── dto/                         # (미구현)
+    │   ├── controller/
+    │   │   └── ChannelController.java
+    │   ├── dto/
+    │   │   ├── ChannelCreateRequest.java
+    │   │   ├── ChannelUpdateRequest.java
+    │   │   ├── ChannelResponse.java
+    │   │   ├── ChannelMemberResponse.java
+    │   │   └── AddMemberRequest.java
     │   ├── entity/
     │   │   ├── Channel.java
     │   │   └── ChannelMember.java
-    │   └── repository/                  # (미구현)
+    │   ├── repository/
+    │   │   ├── ChannelRepository.java
+    │   │   ├── ChannelDynamoRepository.java
+    │   │   ├── ChannelMemberRepository.java
+    │   │   └── ChannelMemberDynamoRepository.java
+    │   └── service/
+    │       └── ChannelService.java
+    │
+    ├── file/
+    │   ├── controller/
+    │   │   └── FileController.java  # S3 Presigned URL 발급
+    │   ├── dto/
+    │   │   ├── PresignRequest.java
+    │   │   └── PresignResponse.java
+    │   └── service/
+    │       └── FileService.java
     │
     ├── dm/
-    │   ├── controller/                  # (미구현)
-    │   ├── service/                     # (미구현)
-    │   ├── dto/                         # (미구현)
-    │   ├── entity/
-    │   │   └── Dm.java
-    │   └── repository/                  # (미구현)
+    │   └── entity/
+    │       └── Dm.java
     │
     └── message/
-        ├── controller/                  # (미구현)
-        ├── service/                     # (미구현)
-        ├── dto/                         # (미구현)
         ├── entity/
         │   ├── Message.java
         │   ├── MessageAttachment.java
-        │   └── RoomType.java            # CHANNEL | DM
+        │   └── RoomType.java        # CHANNEL | DM
         └── repository/
             └── RoomTypeConverter.java
 ```
@@ -202,6 +246,24 @@ src/main/java/com/acc/chattr/
   "statusCode": 200,
   "message": "OK",
   "data": { }
+}
+```
+
+### 페이지네이션 응답
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "OK",
+  "data": {
+    "content": [ ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 100,
+    "totalPages": 5,
+    "hasNext": true
+  }
 }
 ```
 
@@ -225,8 +287,6 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 
 ### BusinessErrorCode — 도메인 비즈니스 예외
 
-`BusinessException`을 throw하면 `GlobalExceptionHandler`가 자동으로 에러 응답을 만듭니다.
-
 | 코드 | HTTP | 메시지 |
 |------|------|--------|
 | `USER_NOT_FOUND` | 404 | 존재하지 않는 사용자입니다. |
@@ -245,18 +305,21 @@ throw new GeneralException(GeneralErrorCode.UNAUTHORIZED);
 
 ### GeneralErrorCode — HTTP/공통 예외
 
-Spring MVC, Security, Validation 예외는 `GlobalExceptionHandler`가 자동으로 아래 코드로 매핑합니다.
-
 | 코드 | HTTP | 트리거 상황 |
 |------|------|------------|
-| `VALIDATION_ERROR` | 400 | `@Valid` 실패, `ConstraintViolation` |
+| `VALIDATION_ERROR` | 400 | `@Valid` 실패, `ConstraintViolation`, 빈 이름 등 |
 | `INVALID_REQUEST_PARAMETER` | 400 | 파라미터 누락·타입 불일치 |
 | `BAD_REQUEST` | 400 | JSON 파싱 실패 등 |
-| `UNAUTHORIZED` | 401 | 미인증 접근, 유효하지 않은 토큰 |
+| `UNAUTHORIZED` | 401 | 미인증 접근 |
+| `INVALID_TOKEN` | 401 | 유효하지 않은 토큰 |
+| `TOKEN_EXPIRED` | 401 | 만료된 토큰 |
+| `INVALID_CREDENTIALS` | 401 | 이메일 또는 비밀번호 오류 |
 | `FORBIDDEN` | 403 | 인증은 됐지만 권한 없음 |
 | `NOT_FOUND` | 404 | 존재하지 않는 엔드포인트 |
+| `USER_ALREADY_EXISTS` | 409 | 이미 가입된 이메일 |
 | `METHOD_NOT_ALLOWED` | 405 | 지원하지 않는 HTTP 메서드 |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Content-Type 불일치 |
+| `TOO_MANY_REQUESTS` | 429 | Cognito 요청 횟수 초과 |
 | `INTERNAL_SERVER_ERROR` | 500 | 처리되지 않은 예외 |
 
 ### 에러 응답 예시
@@ -274,7 +337,20 @@ Spring MVC, Security, Validation 예외는 `GlobalExceptionHandler`가 자동으
 
 ## 인증 흐름
 
-1. 클라이언트가 Cognito에서 **Access Token** 발급
-2. `Authorization: Bearer <Access Token>` 헤더로 요청
-3. Spring Security가 Cognito JWKS로 서명 검증
-4. `CognitoUserSyncFilter`가 첫 로그인 시 DynamoDB에 유저 자동 생성
+### 회원가입 / 로그인 (백엔드 API)
+
+```
+POST /auth/signup   — 회원가입 (Cognito 계정 생성 + 즉시 활성화)
+POST /auth/login    — 로그인 → idToken / accessToken / refreshToken 반환
+POST /auth/refresh  — Refresh Token으로 토큰 갱신
+POST /auth/logout   — 로그아웃 (디바이스 세션 삭제)
+```
+
+### API 요청 인증
+
+1. `/auth/login` 응답의 **`idToken`** 을 사용합니다 (accessToken ❌)
+2. 요청 헤더에 `Authorization: Bearer <idToken>` 추가
+3. Spring Security가 Cognito JWKS로 서명·발급자 검증
+4. `CognitoUserSyncFilter`가 첫 요청 시 DynamoDB에 유저 자동 생성
+
+> Swagger UI: Authorize 버튼 → `Bearer <idToken>` 입력
