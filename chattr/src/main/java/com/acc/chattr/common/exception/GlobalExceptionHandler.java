@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.InvalidPass
 import software.amazon.awssdk.services.cognitoidentityprovider.model.NotAuthorizedException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.TooManyRequestsException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotConfirmedException;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserNotFoundException;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UsernameExistsException;
 
 import java.nio.file.AccessDeniedException;
@@ -158,6 +159,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Response<Void>> handleInvalidPassword(InvalidPasswordException e) {
         log.warn("Cognito InvalidPassword: {}", e.getMessage());
         return ResponseEntity.status(400).body(Response.fail(GeneralErrorCode.INVALID_PASSWORD));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Response<Void>> handleCognitoUserNotFound(UserNotFoundException e) {
+        log.warn("Cognito UserNotFound: {}", e.getMessage());
+        return ResponseEntity.status(404).body(Response.fail(GeneralErrorCode.NOT_FOUND));
     }
 
     @ExceptionHandler(TooManyRequestsException.class)
