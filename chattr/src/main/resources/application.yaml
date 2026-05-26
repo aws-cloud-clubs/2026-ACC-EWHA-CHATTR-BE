@@ -24,6 +24,8 @@ aws:
     endpoint: ${S3_ENDPOINT:}
 
 chattr:
+  redis:
+    topic: ${CHATTR_REDIS_TOPIC:chat}
   websocket:
     allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:3000}
   dynamodb:
