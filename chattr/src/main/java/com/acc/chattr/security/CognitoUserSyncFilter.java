@@ -30,25 +30,28 @@ public class CognitoUserSyncFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        log.warn("CognitoUserSyncFilter: URI={} auth={}", request.getRequestURI(), auth != null ? auth.getClass().getSimpleName() : "null");
         if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
             String cognitoSub = jwt.getSubject();
-            log.warn("CognitoUserSyncFilter: sub={}", cognitoSub);
             try {
                 userRepository.findByCognitoSub(cognitoSub).orElseGet(() -> {
                     String email = jwt.getClaimAsString("email");
+                    if (email == null || email.isBlank()) {
+                        throw new IllegalStateException("JWT에 email 클레임이 없습니다. sub=" + cognitoSub);
+                    }
                     String nickname = jwt.getClaimAsString("nickname");
-                    log.info("CognitoUserSyncFilter: creating user email={} nickname={}", email, nickname);
                     if (nickname == null || nickname.isBlank()) {
                         nickname = email.split("@")[0];
                     }
+                    log.debug("CognitoUserSyncFilter: 신규 유저 생성 sub={}", cognitoSub);
                     User newUser = User.create(UUID.randomUUID().toString(), email, nickname, cognitoSub);
                     userRepository.save(newUser);
-                    log.info("CognitoUserSyncFilter: user created id={}", newUser.getId());
+                    log.debug("CognitoUserSyncFilter: 유저 생성 완료 id={}", newUser.getId());
                     return newUser;
                 });
             } catch (Exception e) {
-                log.error("CognitoUserSyncFilter: failed to sync user sub={}", cognitoSub, e);
+                log.error("CognitoUserSyncFilter: 유저 동기화 실패 sub={} error={}", cognitoSub, e.getMessage());
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "유저 동기화에 실패했습니다.");
+                return;
             }
         }
         chain.doFilter(request, response);

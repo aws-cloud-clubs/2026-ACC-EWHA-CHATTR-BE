@@ -2,7 +2,6 @@ package com.acc.chattr.domain.workspace.service;
 
 import com.acc.chattr.common.code.BusinessErrorCode;
 import com.acc.chattr.common.exception.BusinessException;
-import com.acc.chattr.domain.channel.entity.Channel;
 import com.acc.chattr.domain.channel.repository.ChannelMemberRepository;
 import com.acc.chattr.domain.channel.repository.ChannelRepository;
 import com.acc.chattr.domain.user.entity.User;
@@ -94,13 +93,16 @@ public class WorkspaceService {
         WorkspaceMember member = getMemberOrThrow(workspaceId, user.getId());
         requireAdmin(member);
 
-        // 채널 멤버 → 채널 → 워크스페이스 멤버 순으로 정리
-        List<Channel> channels = channelRepository.findByWorkspaceId(workspaceId);
-        for (Channel channel : channels) {
-            channelMemberRepository.deleteAllByChannelId(channel.getId());
+        // 채널 멤버 → 채널(soft delete) → 워크스페이스 멤버 순으로 정리
+        // findAllIdsByWorkspaceId: 이미 삭제된 채널 포함 전체 조회 → 고아 channel-member 방지
+        List<String> channelIds = channelRepository.findAllIdsByWorkspaceId(workspaceId);
+        for (String channelId : channelIds) {
+            channelMemberRepository.deleteAllByChannelId(channelId);
+        }
+        channelRepository.findByWorkspaceId(workspaceId).forEach(channel -> {
             channel.delete();
             channelRepository.save(channel);
-        }
+        });
         workspaceMemberRepository.deleteAllByWorkspaceId(workspaceId);
 
         workspace.delete();

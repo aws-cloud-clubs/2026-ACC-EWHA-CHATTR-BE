@@ -66,7 +66,7 @@ public class UserController {
         @AuthenticationPrincipal Jwt jwt,
         @Parameter(description = "워크스페이스 ID (지정 시 워크스페이스 소속 유저 조회)")
         @RequestParam(required = false) String workspaceId,
-        @Parameter(description = "검색 키워드 (ID 또는 닉네임)")
+        @Parameter(description = "검색 키워드 (이메일 또는 닉네임)")
         @RequestParam(required = false) String query,
         @Parameter(description = "온라인 상태 필터 (true 지정 시 온라인 유저만 반환)")
         @RequestParam(required = false) Boolean isOnline,

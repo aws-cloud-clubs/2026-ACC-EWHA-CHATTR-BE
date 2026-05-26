@@ -43,4 +43,14 @@ public class ChannelDynamoRepository implements ChannelRepository {
             .filter(c -> !c.isDeleted())
             .toList();
     }
+
+    @Override
+    public List<String> findAllIdsByWorkspaceId(String workspaceId) {
+        return StreamSupport.stream(
+            workspaceChannelsIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(workspaceId).build())).spliterator(), false)
+            .flatMap(page -> page.items().stream())
+            .map(Channel::getId)
+            .toList();
+    }
 }
