@@ -1,17 +1,20 @@
 spring:
   application:
     name: chattr
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}/.well-known/jwks.json
-          issuer-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}
+
+logging:
+  level:
+    root: WARN
+    com.acc.chattr: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
 
 aws:
   region: ${AWS_REGION:ap-northeast-2}
   cognito:
     user-pool-id: ${COGNITO_USER_POOL_ID:local-placeholder}
+    client-id: ${COGNITO_CLIENT_ID:local-placeholder}
+    client-secret: ${COGNITO_CLIENT_SECRET:local-placeholder}
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:}
   s3:
@@ -22,11 +25,20 @@ aws:
 chattr:
   dynamodb:
     table:
-      user: ${TABLE_USER:chattr-dev-user}
-      workspace: ${TABLE_WORKSPACE:chattr-dev-workspace}
-      workspace-member: ${TABLE_WORKSPACE_MEMBER:chattr-dev-workspace-member}
-      channel: ${TABLE_CHANNEL:chattr-dev-channel}
-      channel-member: ${TABLE_CHANNEL_MEMBER:chattr-dev-channel-member}
-      dm: ${TABLE_DM:chattr-dev-dm}
-      message: ${TABLE_MESSAGE:chattr-dev-message}
-      device: ${TABLE_DEVICE:chattr-dev-device}
+      user: ${TABLE_USER:user}
+      workspace: ${TABLE_WORKSPACE:workspace}
+      workspace-member: ${TABLE_WORKSPACE_MEMBER:workspace-member}
+      channel: ${TABLE_CHANNEL:channel}
+      channel-member: ${TABLE_CHANNEL_MEMBER:channel-member}
+      dm: ${TABLE_DM:dm}
+      message: ${TABLE_MESSAGE:message}
+      device: ${TABLE_DEVICE:device}
+
+---
+# prod 프로필: JwtDecoder는 SecurityConfig의 수동 빈으로 통일 관리 (issuer 검증 포함)
+# spring.security.oauth2.resourceserver.jwt 자동 설정은 사용하지 않음
+spring:
+  config:
+    activate:
+      on-profile: prod
+

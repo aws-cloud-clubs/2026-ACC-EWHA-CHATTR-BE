@@ -9,4 +9,5 @@ public interface DeviceRepository {
     void save(Device device);
     Optional<Device> findByUserIdAndDeviceId(String userId, String deviceId);
     List<Device> findByUserId(String userId);
+    void deleteAllByUserId(String userId);
 }

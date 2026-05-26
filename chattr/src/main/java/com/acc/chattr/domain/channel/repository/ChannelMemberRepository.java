@@ -10,4 +10,5 @@ public interface ChannelMemberRepository {
     Optional<ChannelMember> findByChannelIdAndUserId(String channelId, String userId);
     List<ChannelMember> findByChannelId(String channelId);
     List<ChannelMember> findByUserId(String userId);
+    void deleteAllByChannelId(String channelId);
 }

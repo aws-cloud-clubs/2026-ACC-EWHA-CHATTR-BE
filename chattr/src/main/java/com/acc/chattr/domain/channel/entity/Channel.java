@@ -1,5 +1,7 @@
 package com.acc.chattr.domain.channel.entity;
 
+import com.acc.chattr.common.code.GeneralErrorCode;
+import com.acc.chattr.common.exception.GeneralException;
 import com.acc.chattr.domain.common.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,8 +53,11 @@ public class Channel extends BaseEntity {
     }
 
     public void updateInfo(String name, String description, String topic) {
-        this.name = name;
-        this.description = description;
-        this.topic = topic;
+        if (name != null) {
+            if (name.isBlank()) throw new GeneralException(GeneralErrorCode.VALIDATION_ERROR);
+            this.name = name;
+        }
+        if (description != null) this.description = description;
+        if (topic != null) this.topic = topic;
     }
 }

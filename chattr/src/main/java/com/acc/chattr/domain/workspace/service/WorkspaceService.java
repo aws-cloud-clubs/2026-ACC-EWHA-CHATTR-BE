@@ -2,6 +2,8 @@ package com.acc.chattr.domain.workspace.service;
 
 import com.acc.chattr.common.code.BusinessErrorCode;
 import com.acc.chattr.common.exception.BusinessException;
+import com.acc.chattr.domain.channel.repository.ChannelMemberRepository;
+import com.acc.chattr.domain.channel.repository.ChannelRepository;
 import com.acc.chattr.domain.user.entity.User;
 import com.acc.chattr.domain.user.repository.UserRepository;
 import com.acc.chattr.domain.workspace.dto.ChangeRoleRequest;
@@ -28,13 +30,19 @@ public class WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
     private final WorkspaceMemberRepository workspaceMemberRepository;
+    private final ChannelRepository channelRepository;
+    private final ChannelMemberRepository channelMemberRepository;
     private final UserRepository userRepository;
 
     public WorkspaceService(WorkspaceRepository workspaceRepository,
                             WorkspaceMemberRepository workspaceMemberRepository,
+                            ChannelRepository channelRepository,
+                            ChannelMemberRepository channelMemberRepository,
                             UserRepository userRepository) {
         this.workspaceRepository = workspaceRepository;
         this.workspaceMemberRepository = workspaceMemberRepository;
+        this.channelRepository = channelRepository;
+        this.channelMemberRepository = channelMemberRepository;
         this.userRepository = userRepository;
     }
 
@@ -84,6 +92,22 @@ public class WorkspaceService {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
         WorkspaceMember member = getMemberOrThrow(workspaceId, user.getId());
         requireAdmin(member);
+
+        // 채널 멤버 → 채널(soft delete) → 워크스페이스 멤버 순으로 정리
+        // findAllIdsByWorkspaceId: 이미 삭제된 채널 포함 전체 조회 → 고아 channel-member 방지
+        List<String> channelIds = channelRepository.findAllIdsByWorkspaceId(workspaceId);
+        for (String channelId : channelIds) {
+            channelMemberRepository.deleteAllByChannelId(channelId);
+        }
+        // 활성 채널만 soft delete (삭제된 채널은 이미 처리됨)
+        channelRepository.findByWorkspaceId(workspaceId, Integer.MAX_VALUE, null)
+            .content()
+            .forEach(channel -> {
+                channel.delete();
+                channelRepository.save(channel);
+            });
+        workspaceMemberRepository.deleteAllByWorkspaceId(workspaceId);
+
         workspace.delete();
         workspaceRepository.save(workspace);
     }

@@ -10,4 +10,5 @@ public interface WorkspaceMemberRepository {
     Optional<WorkspaceMember> findByWorkspaceIdAndUserId(String workspaceId, String userId);
     List<WorkspaceMember> findByWorkspaceId(String workspaceId);
     List<WorkspaceMember> findByUserId(String userId);
+    void deleteAllByWorkspaceId(String workspaceId);
 }
