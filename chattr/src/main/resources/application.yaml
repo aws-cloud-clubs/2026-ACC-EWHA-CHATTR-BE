@@ -24,6 +24,8 @@ aws:
     endpoint: ${S3_ENDPOINT:}
 
 chattr:
+  websocket:
+    allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:3000}
   dynamodb:
     table:
       user: ${TABLE_USER:chattr-dev-user}
