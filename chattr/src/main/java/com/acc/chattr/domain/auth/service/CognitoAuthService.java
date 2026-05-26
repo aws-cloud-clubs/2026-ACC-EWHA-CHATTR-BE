@@ -1,6 +1,5 @@
 package com.acc.chattr.domain.auth.service;
 
-import com.acc.chattr.domain.auth.dto.ConfirmRequest;
 import com.acc.chattr.domain.auth.dto.LoginRequest;
 import com.acc.chattr.domain.auth.dto.RefreshRequest;
 import com.acc.chattr.domain.auth.dto.SignupRequest;
@@ -8,10 +7,10 @@ import com.acc.chattr.domain.auth.dto.TokenResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminConfirmSignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
 
@@ -23,6 +22,9 @@ import java.util.Map;
 
 @Service
 public class CognitoAuthService {
+
+    @Value("${aws.cognito.user-pool-id}")
+    private String userPoolId;
 
     @Value("${aws.cognito.client-id}")
     private String clientId;
@@ -47,14 +49,9 @@ public class CognitoAuthService {
                 AttributeType.builder().name("nickname").value(request.nickname()).build()
             )
         );
-    }
-
-    public void confirm(ConfirmRequest request) {
-        cognitoClient.confirmSignUp(ConfirmSignUpRequest.builder()
-            .clientId(clientId)
-            .secretHash(secretHash(request.email()))
+        cognitoClient.adminConfirmSignUp(AdminConfirmSignUpRequest.builder()
+            .userPoolId(userPoolId)
             .username(request.email())
-            .confirmationCode(request.code())
             .build()
         );
     }

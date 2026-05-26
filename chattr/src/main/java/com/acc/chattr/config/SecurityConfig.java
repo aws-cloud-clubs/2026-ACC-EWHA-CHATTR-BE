@@ -49,7 +49,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html",
-                    "/auth/signup", "/auth/confirm", "/auth/login", "/auth/refresh").permitAll()
+                    "/auth/signup", "/auth/login", "/auth/refresh").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

@@ -1,7 +1,6 @@
 package com.acc.chattr.domain.auth.controller;
 
 import com.acc.chattr.common.response.Response;
-import com.acc.chattr.domain.auth.dto.ConfirmRequest;
 import com.acc.chattr.domain.auth.dto.DeviceResponse;
 import com.acc.chattr.domain.auth.dto.LoginRequest;
 import com.acc.chattr.domain.auth.dto.RefreshRequest;
@@ -50,17 +49,6 @@ public class AuthController {
     public ResponseEntity<Response<Void>> signup(@RequestBody @Valid SignupRequest request) {
         cognitoAuthService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(Response.ok());
-    }
-
-    @Operation(summary = "이메일 인증", description = "회원가입 후 이메일로 받은 인증 코드를 확인합니다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "인증 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 인증 코드")
-    })
-    @PostMapping("/confirm")
-    public ResponseEntity<Response<Void>> confirm(@RequestBody @Valid ConfirmRequest request) {
-        cognitoAuthService.confirm(request);
-        return ResponseEntity.ok(Response.ok());
     }
 
     @Operation(summary = "로그인", description = "이메일/비밀번호로 로그인합니다. 반환된 idToken을 Authorization 헤더에 사용하세요.")
