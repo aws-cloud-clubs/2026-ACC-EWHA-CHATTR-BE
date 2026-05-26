@@ -6,6 +6,7 @@ import com.acc.chattr.common.response.PageResponse;
 import com.acc.chattr.domain.user.dto.UserResponse;
 import com.acc.chattr.domain.user.entity.User;
 import com.acc.chattr.domain.user.repository.UserRepository;
+import com.acc.chattr.domain.workspace.entity.WorkspaceMember;
 import com.acc.chattr.domain.workspace.repository.WorkspaceMemberRepository;
 import com.acc.chattr.domain.workspace.repository.WorkspaceRepository;
 import org.springframework.stereotype.Service;
@@ -54,7 +55,7 @@ public class UserService {
             .filter(m -> !m.isPending())
             .orElseThrow(() -> new BusinessException(BusinessErrorCode.WORKSPACE_MEMBER_NOT_FOUND));
         List<String> userIds = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
-            .map(m -> m.getUserId())
+            .map(WorkspaceMember::getUserId)
             .toList();
         List<User> filtered = userRepository.findAllByIds(userIds).stream()
             .filter(u -> query == null || query.isBlank()
