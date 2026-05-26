@@ -25,11 +25,8 @@ public enum GeneralErrorCode implements Code {
     TOKEN_EXPIRED(401, "토큰이 만료되었습니다."),
 
     // ==================== Cognito 인증 ====================
-    USER_NOT_CONFIRMED(400, "이메일 인증이 완료되지 않았습니다."),
     INVALID_CREDENTIALS(401, "이메일 또는 비밀번호가 올바르지 않습니다."),
     USER_ALREADY_EXISTS(409, "이미 가입된 이메일입니다."),
-    INVALID_VERIFICATION_CODE(400, "잘못된 인증 코드입니다."),
-    VERIFICATION_CODE_EXPIRED(400, "인증 코드가 만료되었습니다."),
     INVALID_PASSWORD(400, "비밀번호가 정책을 충족하지 않습니다."),
     TOO_MANY_REQUESTS(429, "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
 

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminConfirmSignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUserGlobalSignOutRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
@@ -85,6 +86,18 @@ public class CognitoAuthService {
         AuthenticationResultType result = response.authenticationResult();
         // 리프레시 응답엔 refresh_token이 포함되지 않음 — 기존 토큰을 그대로 사용
         return new TokenResponse(result.idToken(), result.accessToken(), null, request.username(), result.expiresIn());
+    }
+
+    /**
+     * 해당 사용자의 모든 Refresh Token을 무효화합니다.
+     * 이미 발급된 ID/Access Token은 만료 시까지 유효하므로, 토큰 TTL(기본 1시간)을 짧게 설정하는 것을 권장합니다.
+     */
+    public void globalSignOut(String username) {
+        cognitoClient.adminUserGlobalSignOut(AdminUserGlobalSignOutRequest.builder()
+            .userPoolId(userPoolId)
+            .username(username)
+            .build()
+        );
     }
 
     private TokenResponse toTokenResponse(AuthenticationResultType result, String username) {

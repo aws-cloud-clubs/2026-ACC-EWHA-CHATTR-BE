@@ -35,14 +35,10 @@ chattr:
       device: ${TABLE_DEVICE:device}
 
 ---
+# prod 프로필: JwtDecoder는 SecurityConfig의 수동 빈으로 통일 관리 (issuer 검증 포함)
+# spring.security.oauth2.resourceserver.jwt 자동 설정은 사용하지 않음
 spring:
   config:
     activate:
       on-profile: prod
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}/.well-known/jwks.json
-          issuer-uri: https://cognito-idp.${aws.region}.amazonaws.com/${aws.cognito.user-pool-id}
 

@@ -109,8 +109,9 @@ public class AuthController {
     }
 
     @Operation(
-        summary = "로그아웃",
-        description = "현재 로그인 세션을 만료 처리합니다. 해당 계정의 모든 디바이스 세션이 삭제됩니다."
+        summary = "로그아웃 (모든 기기)",
+        description = "Cognito Refresh Token을 전체 무효화하고 모든 디바이스 세션을 삭제합니다. " +
+            "이미 발급된 ID/Access Token은 만료 시까지 유효합니다."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
@@ -119,6 +120,8 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/logout")
     public ResponseEntity<Response<Void>> logout(@AuthenticationPrincipal Jwt jwt) {
+        String email = jwt.getClaimAsString("email");
+        cognitoAuthService.globalSignOut(email);
         deviceService.logout(jwt.getSubject());
         return ResponseEntity.ok(Response.ok());
     }
