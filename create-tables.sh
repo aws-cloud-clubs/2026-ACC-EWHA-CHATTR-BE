@@ -20,9 +20,12 @@ create_table() {
   local name=$1
   echo -n "[$name] 생성 중... "
   shift
-  $CMD create-table --table-name "$name" "$@" \
-    --billing-mode PAY_PER_REQUEST 2>&1 | grep -E "TableName|Error|already" \
-    && echo "완료" || echo "실패 (이미 존재하면 무시)"
+  if $CMD create-table --table-name "$name" "$@" \
+    --billing-mode PAY_PER_REQUEST > /dev/null 2>&1; then
+    echo "완료"
+  else
+    echo "실패 또는 이미 존재"
+  fi
 }
 
 # ─── user ────────────────────────────────────────────────────────

@@ -14,11 +14,14 @@ import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Repository
 public class WorkspaceMemberDynamoRepository implements WorkspaceMemberRepository {
 
     private static final int BATCH_SIZE = 25;
+    private static final int MAX_RETRIES = 3;
 
     private final DynamoDbEnhancedClient enhancedClient;
     private final DynamoDbTable<WorkspaceMember> table;
@@ -84,13 +87,24 @@ public class WorkspaceMemberDynamoRepository implements WorkspaceMemberRepositor
             BatchWriteResult result = enhancedClient.batchWriteItem(
                 BatchWriteItemEnhancedRequest.builder().writeBatches(batchBuilder.build()).build());
             List<Key> unprocessed = result.unprocessedDeleteItemsForTable(table);
-            while (!unprocessed.isEmpty()) {
+            int retries = 0;
+            while (!unprocessed.isEmpty() && retries < MAX_RETRIES) {
+                try {
+                    Thread.sleep(100L << retries); // 100ms, 200ms, 400ms
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
                 WriteBatch.Builder<WorkspaceMember> retryBuilder = WriteBatch.builder(WorkspaceMember.class)
                     .mappedTableResource(table);
                 unprocessed.forEach(retryBuilder::addDeleteItem);
                 result = enhancedClient.batchWriteItem(
                     BatchWriteItemEnhancedRequest.builder().writeBatches(retryBuilder.build()).build());
                 unprocessed = result.unprocessedDeleteItemsForTable(table);
+                retries++;
+            }
+            if (!unprocessed.isEmpty()) {
+                log.warn("batchDelete: {} unprocessed items remaining after {} retries", unprocessed.size(), MAX_RETRIES);
             }
         }
     }

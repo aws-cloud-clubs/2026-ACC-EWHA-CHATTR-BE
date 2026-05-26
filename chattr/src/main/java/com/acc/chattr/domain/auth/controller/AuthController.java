@@ -40,9 +40,9 @@ public class AuthController {
         this.deviceService = deviceService;
     }
 
-    @Operation(summary = "회원가입", description = "Cognito에 계정을 생성합니다. 가입 후 이메일로 인증 코드가 발송됩니다.")
+    @Operation(summary = "회원가입", description = "Cognito에 계정을 생성하고 즉시 활성화합니다.")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "회원가입 성공 — 이메일 인증 필요"),
+        @ApiResponse(responseCode = "201", description = "회원가입 성공"),
         @ApiResponse(responseCode = "400", description = "요청 값 오류")
     })
     @PostMapping("/signup")

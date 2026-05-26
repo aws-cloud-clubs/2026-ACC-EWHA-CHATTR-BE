@@ -13,8 +13,8 @@ aws:
   region: ${AWS_REGION:ap-northeast-2}
   cognito:
     user-pool-id: ${COGNITO_USER_POOL_ID:local-placeholder}
-    client-id: ${COGNITO_CLIENT_ID}
-    client-secret: ${COGNITO_CLIENT_SECRET}
+    client-id: ${COGNITO_CLIENT_ID:local-placeholder}
+    client-secret: ${COGNITO_CLIENT_SECRET:local-placeholder}
   dynamodb:
     endpoint: ${DYNAMODB_ENDPOINT:}
   s3:

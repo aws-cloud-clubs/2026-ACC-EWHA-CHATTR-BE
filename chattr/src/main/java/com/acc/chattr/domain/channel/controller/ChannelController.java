@@ -14,10 +14,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -32,6 +34,7 @@ import java.util.List;
 
 @Tag(name = "채널", description = "채널 생성·조회·수정·삭제 및 멤버 관리 API")
 @SecurityRequirement(name = "bearerAuth")
+@Validated
 @RestController
 @RequestMapping("/channels")
 public class ChannelController {
@@ -56,8 +59,8 @@ public class ChannelController {
     public ResponseEntity<Response<PageResponse<ChannelResponse>>> getChannels(
         @AuthenticationPrincipal Jwt jwt,
         @Parameter(description = "워크스페이스 ID", required = true) @RequestParam String workspaceId,
-        @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
-        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size
+        @Parameter(description = "페이지 번호 (0부터 시작)") @Min(0) @RequestParam(defaultValue = "0") int page,
+        @Parameter(description = "페이지 크기") @Min(1) @RequestParam(defaultValue = "20") int size
     ) {
         return ResponseEntity.ok(Response.ok(channelService.getChannels(jwt.getSubject(), workspaceId, page, size)));
     }
