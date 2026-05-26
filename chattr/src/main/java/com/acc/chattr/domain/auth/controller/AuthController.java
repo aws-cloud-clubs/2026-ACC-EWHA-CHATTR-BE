@@ -32,6 +32,8 @@ import java.util.List;
 @RequestMapping("/auth")
 public class AuthController {
 
+    // 디바이스/로그아웃 엔드포인트는 JWT 인증 필요 (SecurityConfig 참조)
+
     private final CognitoAuthService cognitoAuthService;
     private final DeviceService deviceService;
 
@@ -80,6 +82,7 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "요청 값 오류"),
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/device/register")
     public ResponseEntity<Response<DeviceResponse>> registerDevice(
         @AuthenticationPrincipal Jwt jwt,
@@ -97,6 +100,7 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "조회 성공"),
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/devices")
     public ResponseEntity<Response<List<DeviceResponse>>> getDevices(
         @AuthenticationPrincipal Jwt jwt
@@ -112,6 +116,7 @@ public class AuthController {
         @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
         @ApiResponse(responseCode = "401", description = "인증 실패")
     })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/logout")
     public ResponseEntity<Response<Void>> logout(@AuthenticationPrincipal Jwt jwt) {
         deviceService.logout(jwt.getSubject());

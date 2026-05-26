@@ -30,6 +30,8 @@ public class DeviceService {
             .findByUserIdAndDeviceId(user.getId(), request.deviceId())
             .map(existing -> {
                 existing.refreshActivity();
+                existing.setDeviceName(request.deviceName());
+                existing.setPlatform(request.platform());
                 return existing;
             })
             .orElseGet(() -> Device.create(
