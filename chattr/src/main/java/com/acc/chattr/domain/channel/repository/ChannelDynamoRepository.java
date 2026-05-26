@@ -1,13 +1,20 @@
 package com.acc.chattr.domain.channel.repository;
 
+import com.acc.chattr.common.response.CursorPageResponse;
+import com.acc.chattr.common.util.CursorUtils;
 import com.acc.chattr.domain.channel.entity.Channel;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -35,12 +42,33 @@ public class ChannelDynamoRepository implements ChannelRepository {
     }
 
     @Override
-    public List<Channel> findByWorkspaceId(String workspaceId) {
+    public CursorPageResponse<Channel> findByWorkspaceId(String workspaceId, int size, String cursor) {
+        Map<String, AttributeValue> startKey = CursorUtils.decode(cursor);
+
+        // 삭제되지 않은 채널만 조회
+        Expression notDeleted = Expression.builder()
+            .expression("attribute_not_exists(deletedAt)")
+            .build();
+
+        QueryEnhancedRequest.Builder builder = QueryEnhancedRequest.builder()
+            .queryConditional(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(workspaceId).build()))
+            .filterExpression(notDeleted)
+            .limit(size);
+        if (startKey != null) builder.exclusiveStartKey(startKey);
+
+        Page<Channel> page = workspaceChannelsIndex.query(builder.build()).iterator().next();
+        String nextCursor = CursorUtils.encode(page.lastEvaluatedKey());
+        return CursorPageResponse.of(page.items(), nextCursor);
+    }
+
+    @Override
+    public List<String> findAllIdsByWorkspaceId(String workspaceId) {
         return StreamSupport.stream(
             workspaceChannelsIndex.query(QueryConditional.keyEqualTo(
                 Key.builder().partitionValue(workspaceId).build())).spliterator(), false)
             .flatMap(page -> page.items().stream())
-            .filter(c -> !c.isDeleted())
+            .map(Channel::getId)
             .toList();
     }
 }

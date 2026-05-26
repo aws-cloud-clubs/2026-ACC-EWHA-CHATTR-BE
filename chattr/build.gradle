@@ -29,6 +29,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'software.amazon.awssdk:dynamodb-enhanced'
 	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:cognitoidentityprovider'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'

@@ -30,6 +30,8 @@ public class DeviceService {
             .findByUserIdAndDeviceId(user.getId(), request.deviceId())
             .map(existing -> {
                 existing.refreshActivity();
+                existing.setDeviceName(request.deviceName());
+                existing.setPlatform(request.platform());
                 return existing;
             })
             .orElseGet(() -> Device.create(
@@ -48,6 +50,11 @@ public class DeviceService {
         return deviceRepository.findByUserId(user.getId()).stream()
             .map(DeviceResponse::from)
             .toList();
+    }
+
+    public void logout(String cognitoSub) {
+        User user = getUser(cognitoSub);
+        deviceRepository.deleteAllByUserId(user.getId());
     }
 
     private User getUser(String cognitoSub) {

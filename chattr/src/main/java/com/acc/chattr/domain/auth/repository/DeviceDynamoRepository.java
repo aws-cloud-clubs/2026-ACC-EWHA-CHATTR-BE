@@ -2,19 +2,30 @@ package com.acc.chattr.domain.auth.repository;
 
 import com.acc.chattr.domain.auth.entity.Device;
 import org.springframework.stereotype.Repository;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Repository
 public class DeviceDynamoRepository implements DeviceRepository {
 
+    private static final int BATCH_SIZE = 25;
+    private static final int MAX_RETRIES = 3;
+
+    private final DynamoDbEnhancedClient enhancedClient;
     private final DynamoDbTable<Device> table;
 
-    public DeviceDynamoRepository(DynamoDbTable<Device> deviceTable) {
+    public DeviceDynamoRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbTable<Device> deviceTable) {
+        this.enhancedClient = enhancedClient;
         this.table = deviceTable;
     }
 
@@ -40,5 +51,46 @@ public class DeviceDynamoRepository implements DeviceRepository {
             .flatMap(page -> page.items().stream())
             .filter(d -> !d.isDeleted())
             .toList();
+    }
+
+    @Override
+    public void deleteAllByUserId(String userId) {
+        List<Device> items = table.query(
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(userId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .toList();
+        batchDelete(items);
+    }
+
+    private void batchDelete(List<Device> items) {
+        for (int i = 0; i < items.size(); i += BATCH_SIZE) {
+            List<Device> batch = items.subList(i, Math.min(i + BATCH_SIZE, items.size()));
+            WriteBatch.Builder<Device> batchBuilder = WriteBatch.builder(Device.class)
+                .mappedTableResource(table);
+            batch.forEach(batchBuilder::addDeleteItem);
+            BatchWriteResult result = enhancedClient.batchWriteItem(
+                BatchWriteItemEnhancedRequest.builder().writeBatches(batchBuilder.build()).build());
+            List<Key> unprocessed = result.unprocessedDeleteItemsForTable(table);
+            int retries = 0;
+            while (!unprocessed.isEmpty() && retries < MAX_RETRIES) {
+                try {
+                    Thread.sleep(100L << retries); // 100ms, 200ms, 400ms
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                WriteBatch.Builder<Device> retryBuilder = WriteBatch.builder(Device.class)
+                    .mappedTableResource(table);
+                unprocessed.forEach(retryBuilder::addDeleteItem);
+                result = enhancedClient.batchWriteItem(
+                    BatchWriteItemEnhancedRequest.builder().writeBatches(retryBuilder.build()).build());
+                unprocessed = result.unprocessedDeleteItemsForTable(table);
+                retries++;
+            }
+            if (!unprocessed.isEmpty()) {
+                log.warn("batchDelete: {} unprocessed items remaining after {} retries", unprocessed.size(), MAX_RETRIES);
+            }
+        }
     }
 }

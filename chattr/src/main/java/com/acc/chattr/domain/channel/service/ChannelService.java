@@ -2,6 +2,7 @@ package com.acc.chattr.domain.channel.service;
 
 import com.acc.chattr.common.code.BusinessErrorCode;
 import com.acc.chattr.common.exception.BusinessException;
+import com.acc.chattr.common.response.CursorPageResponse;
 import com.acc.chattr.domain.channel.dto.AddMemberRequest;
 import com.acc.chattr.domain.channel.dto.ChannelCreateRequest;
 import com.acc.chattr.domain.channel.dto.ChannelMemberResponse;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 
 @Service
 public class ChannelService {
@@ -63,14 +65,17 @@ public class ChannelService {
         return ChannelResponse.from(channel);
     }
 
-    public List<ChannelResponse> getChannels(String cognitoSub, String workspaceId) {
+    public CursorPageResponse<ChannelResponse> getChannels(String cognitoSub, String workspaceId,
+                                                            int size, String cursor) {
         User user = getUser(cognitoSub);
         requireWorkspaceExists(workspaceId);
         requireWorkspaceMember(workspaceId, user.getId());
 
-        return channelRepository.findByWorkspaceId(workspaceId).stream()
-            .map(ChannelResponse::from)
-            .toList();
+        CursorPageResponse<Channel> page = channelRepository.findByWorkspaceId(workspaceId, size, cursor);
+        return CursorPageResponse.of(
+            page.content().stream().map(ChannelResponse::from).toList(),
+            page.nextCursor()
+        );
     }
 
     public ChannelResponse getChannel(String cognitoSub, String channelId) {
@@ -97,6 +102,7 @@ public class ChannelService {
         WorkspaceMember member = getActiveMemberOrThrow(channel.getWorkspaceId(), user.getId());
         requireChannelManager(channel, member);
 
+        channelMemberRepository.deleteAllByChannelId(channelId);
         channel.delete();
         channelRepository.save(channel);
     }
