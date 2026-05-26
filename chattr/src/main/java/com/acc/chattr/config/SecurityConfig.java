@@ -18,10 +18,10 @@ public class SecurityConfig {
 
     private final CognitoUserSyncFilter cognitoUserSyncFilter;
 
-    @Value("${aws.cognito.user-pool-id:ap-northeast-2_test}")
+    @Value("${aws.cognito.user-pool-id}")
     private String userPoolId;
 
-    @Value("${aws.region:ap-northeast-2}")
+    @Value("${aws.region}")
     private String region;
 
     public SecurityConfig(CognitoUserSyncFilter cognitoUserSyncFilter) {

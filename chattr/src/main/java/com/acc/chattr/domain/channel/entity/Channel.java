@@ -51,7 +51,10 @@ public class Channel extends BaseEntity {
     }
 
     public void updateInfo(String name, String description, String topic) {
-        if (name != null && !name.isBlank()) this.name = name;
+        if (name != null) {
+            if (name.isBlank()) throw new IllegalArgumentException("name must not be blank");
+            this.name = name;
+        }
         if (description != null) this.description = description;
         if (topic != null) this.topic = topic;
     }

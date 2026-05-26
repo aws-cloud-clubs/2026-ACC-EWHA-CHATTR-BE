@@ -34,23 +34,15 @@ public class UserService {
     }
 
     public PageResponse<UserResponse> getAllUsers(int page, int size) {
-        List<UserResponse> all = userRepository.findAll().stream()
-            .map(UserResponse::from)
-            .toList();
-        return PageResponse.of(all, page, size);
+        return PageResponse.of(userRepository.findAll(), page, size, UserResponse::from);
     }
 
     public PageResponse<UserResponse> searchUsers(String query, int page, int size) {
-        List<UserResponse> all = userRepository.findByQuery(query).stream()
-            .map(UserResponse::from)
-            .toList();
-        return PageResponse.of(all, page, size);
+        return PageResponse.of(userRepository.findByQuery(query), page, size, UserResponse::from);
     }
 
-    public List<UserResponse> getOnlineUsers() {
-        return userRepository.findOnlineUsers().stream()
-            .map(UserResponse::from)
-            .toList();
+    public PageResponse<UserResponse> getOnlineUsers(int page, int size) {
+        return PageResponse.of(userRepository.findOnlineUsers(), page, size, UserResponse::from);
     }
 
     public PageResponse<UserResponse> getWorkspaceUsers(String cognitoSub, String workspaceId, String query, int page, int size) {
@@ -64,12 +56,11 @@ public class UserService {
         List<String> userIds = workspaceMemberRepository.findByWorkspaceId(workspaceId).stream()
             .map(m -> m.getUserId())
             .toList();
-        List<UserResponse> all = userRepository.findAllByIds(userIds).stream()
+        List<User> filtered = userRepository.findAllByIds(userIds).stream()
             .filter(u -> query == null || query.isBlank()
                 || u.getEmail().contains(query)
                 || u.getNickname().contains(query))
-            .map(UserResponse::from)
             .toList();
-        return PageResponse.of(all, page, size);
+        return PageResponse.of(filtered, page, size, UserResponse::from);
     }
 }

@@ -1,3 +1,7 @@
+# 환경변수 파일
+.env
+.env.local
+
 # macOS
 .DS_Store
 

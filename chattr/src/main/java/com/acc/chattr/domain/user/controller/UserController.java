@@ -10,9 +10,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/users")
+@Validated
 public class UserController {
 
     private final UserService userService;
@@ -59,7 +62,7 @@ public class UserController {
         @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @GetMapping
-    public ResponseEntity<Response<?>> getUsers(
+    public ResponseEntity<Response<PageResponse<UserResponse>>> getUsers(
         @AuthenticationPrincipal Jwt jwt,
         @Parameter(description = "워크스페이스 ID (지정 시 워크스페이스 소속 유저 조회)")
         @RequestParam(required = false) String workspaceId,
@@ -67,14 +70,14 @@ public class UserController {
         @RequestParam(required = false) String query,
         @Parameter(description = "온라인 상태 필터 (true 지정 시 온라인 유저만 반환)")
         @RequestParam(required = false) Boolean isOnline,
-        @Parameter(description = "페이지 번호 (0부터 시작, isOnline 제외)") @RequestParam(defaultValue = "0") int page,
-        @Parameter(description = "페이지 크기 (isOnline 제외)") @RequestParam(defaultValue = "20") int size
+        @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") @Min(0) int page,
+        @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") @Min(1) int size
     ) {
         if (workspaceId != null && !workspaceId.isBlank()) {
             return ResponseEntity.ok(Response.ok(userService.getWorkspaceUsers(jwt.getSubject(), workspaceId, query, page, size)));
         }
         if (Boolean.TRUE.equals(isOnline)) {
-            return ResponseEntity.ok(Response.ok(userService.getOnlineUsers()));
+            return ResponseEntity.ok(Response.ok(userService.getOnlineUsers(page, size)));
         }
         if (query != null && !query.isBlank()) {
             return ResponseEntity.ok(Response.ok(userService.searchUsers(query, page, size)));

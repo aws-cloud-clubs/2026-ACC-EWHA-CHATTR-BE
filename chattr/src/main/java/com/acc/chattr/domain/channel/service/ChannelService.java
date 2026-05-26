@@ -70,10 +70,7 @@ public class ChannelService {
         requireWorkspaceExists(workspaceId);
         requireWorkspaceMember(workspaceId, user.getId());
 
-        List<ChannelResponse> all = channelRepository.findByWorkspaceId(workspaceId).stream()
-            .map(ChannelResponse::from)
-            .toList();
-        return PageResponse.of(all, page, size);
+        return PageResponse.of(channelRepository.findByWorkspaceId(workspaceId), page, size, ChannelResponse::from);
     }
 
     public ChannelResponse getChannel(String cognitoSub, String channelId) {
