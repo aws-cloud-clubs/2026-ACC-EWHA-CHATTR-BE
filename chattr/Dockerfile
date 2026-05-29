@@ -1,6 +1,6 @@
 FROM gradle:8.14-jdk17 AS build
 WORKDIR /app
-COPY build.gradle settings.gradle ./
+COPY build.gradle settings.gradle gradlew ./
 COPY gradle gradle
 RUN chmod +x gradlew && ./gradlew --no-daemon dependencies
 COPY src src
