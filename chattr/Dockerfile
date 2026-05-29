@@ -1,10 +1,10 @@
-FROM gradle:8.12-jdk17 AS build
+FROM gradle:8.14-jdk17 AS build
 WORKDIR /app
 COPY build.gradle settings.gradle ./
 COPY gradle gradle
-RUN gradle dependencies --no-daemon
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies
 COPY src src
-RUN gradle bootJar --no-daemon -x test
+RUN ./gradlew --no-daemon bootJar -x test
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
